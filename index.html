@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Control de Acceso · App de Caseta</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#39c5cf">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Acceso">
+<!-- Usa la cámara del dispositivo; no requiere conexión a internet para funcionar. Ábrase idealmente
+     desde un servidor (GitHub Pages) para que la cámara funcione sin restricciones. -->
+<style>
+
+
+
+
+:root{
+  --bg:#10141b;
+  --bg-grad:#0c0f14;
+  --panel:#1a212c;
+  --panel-alt:#212a37;
+  --border:#2c3444;
+  --border-soft:#232b38;
+  --text:#e8ecf1;
+  --muted:#8b95a6;
+  --muted-dim:#5f6878;
+  --accent:#4f8fd6;
+  --accent-soft:rgba(79,143,214,.14);
+  --verde:#3fb950;
+  --verde-soft:rgba(63,185,80,.14);
+  --amarillo:#e3b341;
+  --amarillo-soft:rgba(227,179,65,.14);
+  --naranja:#e08a4b;
+  --naranja-soft:rgba(224,138,75,.16);
+  --rojo:#f0554a;
+  --rojo-soft:rgba(240,85,74,.15);
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:radial-gradient(1200px 600px at 10% -10%, #17202c 0%, var(--bg) 45%) fixed, var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1360px;margin:0 auto;padding:22px 22px 60px;}
+
+header.top{
+  display:flex;justify-content:space-between;align-items:flex-end;gap:20px;
+  padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid var(--border-soft);
+  flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand-mark{
+  width:38px;height:38px;border-radius:8px;flex:none;
+  background:linear-gradient(160deg, var(--accent), #2c5c8f);
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px rgba(255,255,255,.06) inset;
+}
+.brand-mark svg{width:20px;height:20px;}
+h1{
+  font-family:'Barlow Condensed',sans-serif;font-weight:700;
+  font-size:26px;letter-spacing:.2px;margin:0;line-height:1.1;
+}
+.brand-sub{color:var(--muted);font-size:12.5px;margin-top:2px;}
+.top-right{text-align:right;color:var(--muted);font-size:12.5px;}
+.top-right .clock{font-family:'IBM Plex Mono',monospace;color:var(--text);font-size:13px;}
+
+.filters{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:18px;
+}
+.field{display:flex;flex-direction:column;gap:5px;min-width:150px;}
+.field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+select,input[type=text]{
+  background:var(--panel-alt);border:1px solid var(--border);color:var(--text);
+  padding:8px 10px;border-radius:7px;font-size:13.5px;font-family:inherit;
+  outline:none;
+}
+select:focus,input:focus{border-color:var(--accent);}
+.field.week-range{flex-direction:row;align-items:flex-end;gap:8px;}
+.field.week-range .inner{display:flex;flex-direction:column;gap:5px;}
+input[type=number]{
+  width:64px;background:var(--panel-alt);border:1px solid var(--border);color:var(--text);
+  padding:8px 8px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:13px;
+}
+.btn-reset{
+  margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:9px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;
+  transition:border-color .15s, color .15s;
+}
+.btn-reset:hover{border-color:var(--accent);color:var(--text);}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 16px;position:relative;overflow:hidden;
+}
+.kpi .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.kpi .value{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:30px;line-height:1;}
+.kpi .sub{font-size:11.5px;color:var(--muted-dim);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+.kpi.semaforo .value{display:flex;align-items:center;gap:9px;font-size:22px;}
+.dot{width:13px;height:13px;border-radius:50%;flex:none;box-shadow:0 0 10px 1px currentColor;}
+.dot.VERDE{background:var(--verde);color:var(--verde);}
+.dot.AMARILLO{background:var(--amarillo);color:var(--amarillo);}
+.dot.ROJO{background:var(--rojo);color:var(--rojo);}
+.kpi-accentbar{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);}
+
+.grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:14px;margin-bottom:14px;}
+.panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px 12px;
+}
+.panel h2{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;margin:0 0 2px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.panel .desc{color:var(--muted);font-size:12px;margin-bottom:12px;}
+.chart-box{position:relative;height:260px;}
+.chart-box.tall{height:320px;}
+.chart-box.short{height:210px;}
+.chart-box.xtall{height:560px;}
+
+.wow-pill{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;padding:4px 9px;border-radius:20px;
+  border:1px solid var(--border);white-space:nowrap;
+}
+.wow-pill.up{color:var(--rojo);border-color:rgba(240,85,74,.4);background:var(--rojo-soft);}
+.wow-pill.down{color:var(--verde);border-color:rgba(63,185,80,.4);background:var(--verde-soft);}
+.wow-pill.flat{color:var(--muted);}
+
+.section-title{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  margin:26px 0 12px;
+}
+.section-title h2{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:20px;margin:0;}
+.section-title .desc{color:var(--muted);font-size:12.5px;}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;}
+.card-grid-scroll{overflow-y:auto;max-height:250px;transition:max-height .28s ease;border-radius:var(--radius);}
+.card-grid-scroll.expanded{max-height:none;overflow-y:visible;}
+.card-grid-toggle{display:flex;justify-content:center;margin:10px 0 4px;}
+.card-grid-toggle button{
+  background:var(--panel);border:1px solid var(--border-soft);color:var(--accent);
+  font-size:12px;font-weight:500;padding:6px 16px;border-radius:8px;cursor:pointer;
+}
+.card-grid-toggle button:hover{border-color:var(--accent);background:var(--panel-alt);}
+.chart-box-scroll{overflow-y:auto;max-height:260px;transition:max-height .28s ease;border-radius:var(--radius);}
+.chart-box-scroll.expanded{max-height:none;overflow-y:visible;}
+.chart-box-scroll .chart-box{height:260px;}
+.scard{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  padding:14px 15px;border-left:4px solid var(--border);position:relative;
+}
+.scard.VERDE{border-left-color:var(--verde);}
+.scard.AMARILLO{border-left-color:var(--amarillo);}
+.scard.ROJO{border-left-color:var(--rojo);}
+.scard .name{font-weight:600;font-size:14.5px;margin-bottom:9px;padding-right:50px;}
+.scard .tag{
+  position:absolute;top:14px;right:14px;font-size:10px;font-weight:600;letter-spacing:.04em;
+  padding:3px 7px;border-radius:5px;
+}
+.scard .tag.VERDE{color:var(--verde);background:var(--verde-soft);}
+.scard .tag.AMARILLO{color:var(--amarillo);background:var(--amarillo-soft);}
+.scard .tag.ROJO{color:var(--rojo);background:var(--rojo-soft);}
+.scard .row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-top:5px;}
+.scard .row b{color:var(--text);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;}
+.scard .trend{margin-top:9px;font-size:11.5px;display:flex;align-items:center;gap:5px;}
+.scard .trend.up{color:var(--rojo);}
+.scard .trend.down{color:var(--verde);}
+.scard .trend.flat{color:var(--muted-dim);}
+
+.table-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.table-toolbar input[type=text]{min-width:260px;}
+.table-count{color:var(--muted);font-size:12px;margin-left:auto;font-family:'IBM Plex Mono',monospace;}
+.tbl-scroll{max-height:480px;overflow:auto;border:1px solid var(--border);border-radius:8px;}
+table{width:100%;border-collapse:collapse;font-size:12.8px;}
+thead th{
+  position:sticky;top:0;background:var(--panel-alt);text-align:left;padding:9px 10px;
+  font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;
+  border-bottom:1px solid var(--border);z-index:1;
+}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--border-soft);vertical-align:top;}
+tbody tr:hover{background:var(--panel-alt);}
+td.mono{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);white-space:nowrap;}
+td.desc-cell{max-width:300px;color:var(--muted);cursor:pointer;}
+td.desc-cell .short{display:block;}
+td.desc-cell.expanded .short{white-space:normal;}
+td.desc-cell:not(.expanded) .short{
+  display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.status-pill{font-size:11px;padding:2px 8px;border-radius:12px;white-space:nowrap;font-weight:600;}
+.status-pill.BAJO{color:var(--verde);background:var(--verde-soft);}
+.status-pill.MEDIO{color:var(--amarillo);background:var(--amarillo-soft);}
+.status-pill.ALTO{color:var(--naranja);background:var(--naranja-soft);}
+.status-pill.CRÍTICO{color:var(--rojo);background:var(--rojo-soft);}
+.status-pill.ACTIVO{color:var(--verde);background:var(--verde-soft);}
+.status-pill.BAJA{color:var(--muted);background:rgba(139,149,166,.14);}
+.status-pill.VERDE{color:var(--verde);background:var(--verde-soft);}
+.status-pill.AMARILLO{color:var(--amarillo);background:var(--amarillo-soft);}
+.status-pill.ROJO{color:var(--rojo);background:var(--rojo-soft);}
+.eval-preview{grid-column:1/-1;display:flex;align-items:center;gap:14px;flex-wrap:wrap;background:var(--panel-alt);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-top:2px;}
+.eval-preview .val{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;}
+.eval-preview .rec{color:var(--muted);font-size:12.5px;flex:1;min-width:200px;}
+.nivel-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;}
+.medal{font-size:13px;margin-right:4px;}
+
+/* ---------- Roster (altas / bajas) ---------- */
+.roster-forms{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;padding:16px 18px 6px;}
+.roster-forms .add-form{grid-template-columns:repeat(2,1fr);padding:0;border-left:1px solid var(--border-soft);}
+.roster-forms > div:first-child .add-form{border-left:none;padding-right:14px;}
+.roster-forms > div:last-child .add-form{padding-left:14px;}
+.roster-forms h3{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:15.5px;margin:0 0 10px;
+  color:var(--text);display:flex;align-items:center;gap:7px;
+}
+.roster-forms h3 .tag-mini{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;letter-spacing:.03em;}
+.roster-forms h3 .tag-mini.alta{color:var(--verde);background:var(--verde-soft);}
+.roster-forms h3 .tag-mini.baja{color:var(--rojo);background:var(--rojo-soft);}
+.roster-table-wrap{padding:14px 18px 18px;}
+@media (max-width:900px){
+  .roster-forms{grid-template-columns:1fr;}
+  .roster-forms .add-form{border-left:none !important;padding:0 !important;}
+}
+
+/* ---------- Disciplina (llamadas de atención) ---------- */
+.tag-mini{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;letter-spacing:.03em;white-space:nowrap;}
+.tag-mini.leve{color:var(--verde);background:var(--verde-soft);}
+.tag-mini.moderada{color:var(--amarillo);background:var(--amarillo-soft);}
+.tag-mini.grave{color:var(--rojo);background:var(--rojo-soft);}
+.disc-flag{
+  display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;
+  color:var(--rojo);background:var(--rojo-soft);border:1px solid rgba(240,85,74,.35);
+  padding:1px 7px;border-radius:10px;margin-left:6px;white-space:nowrap;vertical-align:middle;
+}
+
+footer.note{
+  margin-top:26px;padding-top:16px;border-top:1px solid var(--border-soft);
+  color:var(--muted-dim);font-size:11.5px;line-height:1.7;
+}
+footer.note b{color:var(--muted);}
+
+@media (max-width:980px){
+  .kpis{grid-template-columns:repeat(2,1fr);}
+  .grid2{grid-template-columns:1fr;}
+}
+
+.add-panel{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  margin-bottom:18px;overflow:hidden;
+}
+.add-panel-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:14px 18px;cursor:pointer;user-select:none;
+}
+.add-panel-head h2{
+  font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;margin:0;
+  display:flex;align-items:center;gap:10px;
+}
+.add-panel-head .badge-new{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);
+  background:var(--accent-soft);border:1px solid rgba(79,143,214,.35);
+  padding:2px 8px;border-radius:20px;
+}
+.add-panel-head .chev{color:var(--muted);transition:transform .18s;font-size:13px;}
+.add-panel.open .chev{transform:rotate(180deg);}
+.add-panel-head .hint{color:var(--muted);font-size:12px;font-weight:400;}
+.add-panel-body{
+  max-height:0;overflow:hidden;transition:max-height .22s ease;
+  border-top:1px solid var(--border-soft);
+}
+.add-panel.open .add-panel-body{max-height:4200px;}
+.add-form{padding:16px 18px 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px 14px;}
+.add-form .f-full{grid-column:1 / -1;}
+.add-form .f-half{grid-column:span 2;}
+.add-form label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.add-form input[list],
+.add-form input[type=text],
+.add-form input[type=number],
+.add-form input[type=date],
+.add-form select,
+.add-form textarea{
+  width:100%;background:var(--panel-alt);border:1px solid var(--border);color:var(--text);
+  padding:9px 10px;border-radius:7px;font-size:13.5px;font-family:inherit;outline:none;
+}
+.add-form input:focus,.add-form select:focus,.add-form textarea:focus{border-color:var(--accent);}
+.add-form textarea{resize:vertical;min-height:56px;line-height:1.4;}
+.add-form .req::after{content:' *';color:var(--rojo);}
+.add-form .actions{grid-column:1 / -1;display:flex;align-items:center;gap:10px;margin-top:2px;flex-wrap:wrap;}
+.section-sub{
+  grid-column:1/-1;font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:14px;
+  color:var(--accent);border-top:1px dashed var(--border-soft);padding-top:12px;margin-top:2px;
+  text-transform:uppercase;letter-spacing:.04em;
+}
+.section-sub:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+.btn-primary{
+  background:linear-gradient(160deg, var(--accent), #2c5c8f);color:#fff;border:none;
+  padding:10px 18px;border-radius:7px;cursor:pointer;font-size:13.5px;font-weight:600;font-family:inherit;
+}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-secondary{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:10px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;
+}
+.btn-secondary:hover{border-color:var(--accent);color:var(--text);}
+.btn-danger-outline{
+  background:transparent;border:1px solid rgba(240,85,74,.4);color:var(--rojo);
+  padding:10px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-family:inherit;
+}
+.btn-danger-outline:hover{background:var(--rojo-soft);}
+.form-msg{font-size:12.5px;padding:8px 12px;border-radius:7px;margin-top:2px;display:none;}
+.form-msg.ok{display:block;color:var(--verde);background:var(--verde-soft);border:1px solid rgba(63,185,80,.35);}
+.form-msg.err{display:block;color:var(--rojo);background:var(--rojo-soft);border:1px solid rgba(240,85,74,.35);}
+.storage-note{grid-column:1/-1;color:var(--muted-dim);font-size:11.5px;line-height:1.6;border-top:1px dashed var(--border-soft);padding-top:10px;margin-top:2px;}
+.own-row{background:rgba(79,143,214,.06);}
+.del-btn{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:2px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit;
+}
+.del-btn:hover{border-color:var(--rojo);color:var(--rojo);}
+.edit-btn{
+  background:transparent;border:1px solid var(--border);color:var(--muted);
+  padding:2px 8px;border-radius:6px;cursor:pointer;font-size:11px;font-family:inherit;margin-right:4px;
+}
+.edit-btn:hover{border-color:var(--accent);color:var(--text);}
+.row-actions{display:flex;gap:4px;white-space:nowrap;}
+.edited-row{background:rgba(227,179,65,.08);}
+.edited-tag{font-size:10px;color:var(--amarillo);border:1px solid rgba(227,179,65,.4);border-radius:5px;padding:0 5px;margin-left:6px;vertical-align:middle;}
+.modal-overlay{
+  display:none;position:fixed;inset:0;background:rgba(8,10,14,.65);z-index:50;
+  align-items:center;justify-content:center;padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
+  max-width:760px;width:100%;max-height:90vh;overflow:auto;padding:20px 22px;
+}
+.modal-box h3{margin:0 0 4px;font-family:'Barlow Condensed',sans-serif;font-size:20px;}
+.modal-sub{color:var(--muted);font-size:12px;margin-bottom:14px;}
+.modal-box .add-form{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px 14px;padding:0;}
+
+
+
+
+/* ---- banner de alertas (nuevo) ---- */
+.alert-banner{
+  background:var(--rojo-soft);border:1px solid rgba(240,85,74,.4);border-radius:var(--radius);
+  padding:14px 18px;margin-bottom:20px;
+}
+.alert-banner h2{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;margin:0 0 4px;color:var(--rojo);display:flex;align-items:center;gap:8px;}
+.alert-banner .desc{color:var(--muted);font-size:12.5px;margin-bottom:10px;}
+.alert-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;}
+.alert-item{background:var(--panel);border:1px solid var(--border-soft);border-radius:9px;padding:10px 12px;}
+.alert-item .name{font-weight:600;font-size:13.5px;color:var(--text);}
+.alert-item .loc{color:var(--muted);font-size:11.5px;margin-bottom:6px;}
+.alert-item .accion{color:var(--muted);font-size:12px;line-height:1.4;}
+.alert-item .calif{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--rojo);font-weight:600;}
+.alert-banner.hidden{display:none;}
+
+
+
+.alert-banner{background:var(--rojo-soft);border:1px solid rgba(240,85,74,.4);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;}
+.alert-banner h2{font-family:'Barlow Condensed',sans-serif;font-weight:600;font-size:18px;margin:0 0 4px;color:var(--rojo);display:flex;align-items:center;gap:8px;}
+.alert-banner .desc{color:var(--muted);font-size:12.5px;}
+.mini-table{width:100%;border-collapse:collapse;font-size:13px;}
+.mini-table th{text-align:left;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:6px 8px;border-bottom:1px solid var(--border-soft);}
+.mini-table td{padding:9px 8px;border-bottom:1px solid var(--border-soft);}
+.mini-table .dot{margin-right:0;}
+
+
+
+/* ---- App de Control de Acceso: estilos específicos ---- */
+.setup-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:18px;}
+.field-inline{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.field-inline label.req::after{content:' *';color:var(--rojo);}
+.field-inline label{font-size:12px;color:var(--muted);}
+.field-inline input, .field-inline select, .field-inline textarea{
+  background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);
+  font-family:inherit;font-size:14px;
+}
+.field-inline textarea{min-height:60px;resize:vertical;}
+.camera-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;background:var(--panel-alt);
+  border:1px dashed var(--border);border-radius:10px;padding:14px;cursor:pointer;color:var(--muted);font-size:13px;
+}
+.camera-btn:active{opacity:.8;}
+.photo-preview{width:100%;max-width:220px;border-radius:10px;margin-top:10px;border:1px solid var(--border-soft);display:block;}
+.big-btn{
+  width:100%;padding:18px;border-radius:14px;border:none;font-size:16px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s, opacity .15s;
+}
+.big-btn:active{transform:scale(.98);}
+.big-btn.entrada{background:linear-gradient(135deg,#3fb950,#2ea043);color:#fff;}
+.big-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+.visitante-card{
+  display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border-soft);
+  border-left:4px solid var(--verde);border-radius:12px;padding:13px 15px;margin-bottom:10px;
+}
+.visitante-card .v-thumb{width:46px;height:46px;border-radius:8px;object-fit:cover;flex:none;background:var(--panel-alt);}
+.visitante-card .v-thumb-empty{width:46px;height:46px;border-radius:8px;flex:none;background:var(--panel-alt);display:flex;align-items:center;justify-content:center;color:var(--muted-dim);font-size:18px;}
+.visitante-card .v-body{flex:1;min-width:0;}
+.visitante-card .v-name{font-weight:600;font-size:14px;}
+.visitante-card .v-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.visitante-card .v-action{flex:none;}
+.btn-salida{background:var(--rojo);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-salida:active{opacity:.8;}
+
+.gafete-pill{display:inline-flex;align-items:center;gap:4px;background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:12px;padding:2px 9px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+
+.history-item{
+  background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.history-item .h-main{font-weight:600;font-size:13.5px;}
+.history-item .h-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.history-item .h-actions{display:flex;gap:8px;}
+
+.status-pill{font-size:11px;padding:3px 9px;border-radius:12px;white-space:nowrap;font-weight:600;}
+.status-pill.DENTRO{color:var(--verde);background:var(--verde-soft);}
+.status-pill.SALIO{color:var(--muted);background:rgba(139,149,166,.14);}
+
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:720px;">
+
+  <header class="top" style="flex-direction:column;align-items:flex-start;gap:10px;">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z" stroke="#dbe8f7" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M9 12.2l2 2 4-4.4" stroke="#dbe8f7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1 style="font-size:22px;">Control de Acceso</h1>
+        <div class="brand-sub">Registro de ingreso y salida de visitantes y proveedores — todo se guarda en este teléfono</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="setup-card">
+    <div class="section-sub" style="margin-top:0;">Identificación de la caseta</div>
+    <div class="field-inline">
+      <label class="req">Nombre de quien confirma el ingreso</label>
+      <input type="text" id="inGuardiaConfirma" placeholder="Nombre completo del guardia">
+    </div>
+    <div class="field-inline" style="margin-bottom:0;">
+      <label class="req">Área / Campo</label>
+      <input type="text" id="inCampo" list="dlCampo" placeholder="Ej. Campo Palomas">
+      <datalist id="dlCampo"></datalist>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpisRow"></div>
+
+  <button type="button" class="big-btn entrada" id="btnNuevoIngreso">➕ Registrar nuevo ingreso</button>
+  <div class="form-msg" id="setupMsg" style="margin-top:10px;"></div>
+
+  <div class="section-title" style="margin-top:26px;">
+    <h2>🟢 Actualmente dentro</h2>
+    <div class="desc">Visitantes y proveedores que aún no registran salida, en esta caseta</div>
+  </div>
+  <div id="dentroList"></div>
+
+  <div class="section-title" style="margin-top:26px;">
+    <h2>📋 Historial de accesos</h2>
+    <div class="desc">Guardados en este teléfono — expórtelos para enviarlos al supervisor</div>
+  </div>
+  <div class="table-toolbar" style="margin-bottom:12px;">
+    <input type="text" id="historialSearch" placeholder="Buscar por nombre, placas o gafete…">
+    <span class="table-count" id="historialCount">0 registros</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+    <button type="button" class="btn-secondary" id="btnExportarTodo">⬇ Exportar todos los accesos (JSON)</button>
+  </div>
+  <div id="historialList"></div>
+
+  <!-- ===================== MODAL: registrar nuevo ingreso ===================== -->
+  <div class="modal-overlay" id="modalIngreso">
+    <div class="modal-box" style="max-width:460px;">
+      <h3>➕ Registrar nuevo ingreso</h3>
+      <div class="modal-sub" id="modalIngresoSub">—</div>
+      <form id="formIngreso">
+        <div class="field-inline">
+          <label class="req">Nombre del proveedor / visitante</label>
+          <input type="text" id="inNombre" placeholder="Nombre completo" required>
+        </div>
+        <div class="field-inline">
+          <label class="req">Tipo</label>
+          <select id="inTipoPersona" required>
+            <option value="">— Seleccionar —</option>
+            <option value="Visitante">Visitante</option>
+            <option value="Proveedor">Proveedor</option>
+            <option value="Contratista">Contratista</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="field-inline">
+          <label class="req">Área y/o persona a la que visita</label>
+          <input type="text" id="inAreaVisita" placeholder="Ej. Oficina RH — Lic. Pérez" required>
+        </div>
+        <div class="field-inline">
+          <label>Placas de vehículo (si aplica)</label>
+          <input type="text" id="inPlacas" placeholder="Ej. ABC-123-45">
+        </div>
+        <div class="field-inline">
+          <label>N° de gafete (si aplica)</label>
+          <input type="text" id="inGafete" placeholder="Ej. 014">
+        </div>
+        <div class="field-inline">
+          <label>Tipo de identificación</label>
+          <select id="inTipoID">
+            <option value="">— Seleccionar —</option>
+            <option value="INE">INE</option>
+            <option value="Licencia">Licencia de conducir</option>
+            <option value="Carnet de empresa">Carnet de empresa</option>
+            <option value="Pasaporte">Pasaporte</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="field-inline">
+          <label>Foto de identificación oficial</label>
+          <label class="camera-btn" for="inFotoID">📷 Tomar / adjuntar foto de la identificación</label>
+          <input type="file" id="inFotoID" accept="image/*" capture="environment" style="display:none;">
+          <img id="fotoIDPreview" class="photo-preview" style="display:none;">
+        </div>
+        <div class="field-inline">
+          <label>Nota (opcional)</label>
+          <textarea id="inNotaIngreso" placeholder="Observaciones..."></textarea>
+        </div>
+        <div class="form-msg" id="formIngresoMsg"></div>
+        <div class="actions" style="display:flex;gap:10px;margin-top:6px;">
+          <button type="submit" class="btn-primary" style="flex:1;">Registrar ingreso</button>
+          <button type="button" class="btn-secondary" id="btnCancelarIngreso" style="flex:1;">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+<script>
+
+const COLORS = { VERDE:'#3fb950', AMARILLO:'#e3b341', ROJO:'#f0554a', NARANJA:'#e08a4b', accent:'#4f8fd6', muted:'#8b95a6', text:'#e8ecf1' };
+
+function fmtDateTime(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtHora(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtDuracion(ini,fin){
+  if(!ini) return '—';
+  const ms = (fin||Date.now()) - ini;
+  const mins = Math.floor(ms/60000);
+  const h = Math.floor(mins/60), m = mins%60;
+  return h>0 ? (h+'h '+m+'min') : (m+' min');
+}
+function nextId(prefix){ return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+
+// ---------- comprimir foto antes de guardar ----------
+function compressImage(file, maxDim, quality){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        let w = img.width, h = img.height;
+        if(w>h && w>maxDim){ h = Math.round(h*maxDim/w); w = maxDim; }
+        else if(h>=w && h>maxDim){ w = Math.round(w*maxDim/h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality||0.6));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---------- IndexedDB: historial de accesos (guarda fotos, más espacio que localStorage) ----------
+const DB_NAME = 'control_acceso_db';
+const DB_STORE = 'accesos';
+let _dbPromise = null;
+function openDB(){
+  if(_dbPromise) return _dbPromise;
+  _dbPromise = new Promise((resolve, reject)=>{
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = function(){
+      const db = req.result;
+      if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, {keyPath:'id'});
+    };
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error);
+  });
+  return _dbPromise;
+}
+async function dbSaveAcceso(acceso){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE,'readwrite');
+    tx.objectStore(DB_STORE).put(acceso);
+    tx.oncomplete = ()=>resolve(true);
+    tx.onerror = ()=>reject(tx.error);
+  });
+}
+async function dbGetAllAccesos(){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE,'readonly');
+    const req = tx.objectStore(DB_STORE).getAll();
+    req.onsuccess = ()=>resolve(req.result||[]);
+    req.onerror = ()=>reject(req.error);
+  });
+}
+async function dbDeleteAcceso(id){
+  const db = await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(DB_STORE,'readwrite');
+    tx.objectStore(DB_STORE).delete(id);
+    tx.oncomplete = ()=>resolve(true);
+    tx.onerror = ()=>reject(tx.error);
+  });
+}
+
+let ALL_ACCESOS = [];
+let modalFotoIDData = null;
+
+function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+function avg(arr){ return arr.length ? sum(arr)/arr.length : 0; }
+
+// ---------- KPIs ----------
+function renderKpis(){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const hoyTs = hoy.getTime();
+  const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida);
+  const hoyRegistros = ALL_ACCESOS.filter(a=>a.horaIngreso>=hoyTs);
+  const duracionesHoy = hoyRegistros.filter(a=>a.horaSalida).map(a=>(a.horaSalida-a.horaIngreso)/60000);
+
+  document.getElementById('kpisRow').innerHTML = `
+    <div class="kpi semaforo"><div class="kpi-accentbar"></div>
+      <div class="label">Actualmente dentro</div>
+      <div class="value"><span class="dot ${dentro.length>0?'AMARILLO':'VERDE'}"></span>${dentro.length}</div>
+      <div class="sub">en esta caseta</div>
+    </div>
+    <div class="kpi"><div class="kpi-accentbar"></div>
+      <div class="label">Registros de hoy</div>
+      <div class="value">${hoyRegistros.length}</div>
+      <div class="sub">ingresos registrados</div>
+    </div>
+    <div class="kpi"><div class="kpi-accentbar"></div>
+      <div class="label">Duración promedio</div>
+      <div class="value">${duracionesHoy.length ? Math.round(avg(duracionesHoy))+' min' : '—'}</div>
+      <div class="sub">visitas de hoy ya salidas</div>
+    </div>
+    <div class="kpi"><div class="kpi-accentbar"></div>
+      <div class="label">Total histórico</div>
+      <div class="value">${ALL_ACCESOS.length}</div>
+      <div class="sub">en este teléfono</div>
+    </div>
+  `;
+}
+
+// ---------- lista de "actualmente dentro" ----------
+function renderDentroList(){
+  const cont = document.getElementById('dentroList');
+  const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida).sort((a,b)=>b.horaIngreso-a.horaIngreso);
+  if(dentro.length===0){
+    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;">No hay nadie registrado como "dentro" en este momento.</div>';
+    return;
+  }
+  cont.innerHTML = dentro.map(a=>`
+    <div class="visitante-card">
+      ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
+      <div class="v-body">
+        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span></div>
+        <div class="v-meta">
+          Entró ${fmtHora(a.horaIngreso)} (${fmtDuracion(a.horaIngreso, null)}) · Visita: ${a.areaVisita}
+          ${a.placas ? ' · <span class="gafete-pill">🚗 '+a.placas+'</span>' : ''}
+          ${a.gafeteNum ? ' · <span class="gafete-pill">🪪 #'+a.gafeteNum+'</span>' : ''}
+        </div>
+      </div>
+      <div class="v-action">
+        <button type="button" class="btn-salida" data-id="${a.id}">Registrar salida</button>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('dentroList').addEventListener('click', async function(e){
+  const btn = e.target.closest('.btn-salida');
+  if(!btn) return;
+  const id = btn.getAttribute('data-id');
+  const acceso = ALL_ACCESOS.find(a=>a.id===id);
+  if(!acceso) return;
+  if(!confirm('¿Registrar la salida de '+acceso.nombre+' ahora?')) return;
+  acceso.horaSalida = Date.now();
+  await dbSaveAcceso(acceso);
+  renderAll();
+});
+
+// ---------- historial ----------
+function renderHistorial(){
+  const q = (document.getElementById('historialSearch').value||'').toLowerCase().trim();
+  let lista = ALL_ACCESOS.slice().sort((a,b)=>b.horaIngreso-a.horaIngreso);
+  if(q){
+    lista = lista.filter(a=>
+      (a.nombre||'').toLowerCase().includes(q) ||
+      (a.placas||'').toLowerCase().includes(q) ||
+      (a.gafeteNum||'').toLowerCase().includes(q)
+    );
+  }
+  document.getElementById('historialCount').textContent = lista.length + (lista.length===1?' registro':' registros');
+  document.getElementById('historialList').innerHTML = lista.map(a=>{
+    const estado = a.horaSalida ? 'SALIO' : 'DENTRO';
+    return `<div class="history-item">
+      <div style="display:flex;gap:12px;align-items:center;">
+        ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
+        <div>
+          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span></div>
+          <div class="h-sub">${a.campo} · ${a.tipoPersona} · Visita: ${a.areaVisita}</div>
+          <div class="h-sub">Ingreso: ${fmtDateTime(a.horaIngreso)} ${a.horaSalida ? ('· Salida: '+fmtDateTime(a.horaSalida)+' · '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ''}</div>
+        </div>
+      </div>
+      <div class="h-actions">
+        <button type="button" class="del-btn btn-del-acceso" data-id="${a.id}">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+document.getElementById('historialSearch').addEventListener('input', renderHistorial);
+document.getElementById('historialList').addEventListener('click', async function(e){
+  const btn = e.target.closest('.btn-del-acceso');
+  if(!btn) return;
+  if(!confirm('¿Eliminar este registro de acceso? Esta acción no se puede deshacer.')) return;
+  await dbDeleteAcceso(btn.getAttribute('data-id'));
+  await cargarYRenderizar();
+});
+
+// ---------- campo datalist ----------
+function refreshCampoDatalist(){
+  const campos = Array.from(new Set(ALL_ACCESOS.map(a=>a.campo))).sort();
+  document.getElementById('dlCampo').innerHTML = campos.map(c=>`<option value="${c}">`).join('');
+}
+
+function renderAll(){
+  renderKpis();
+  renderDentroList();
+  renderHistorial();
+  refreshCampoDatalist();
+}
+async function cargarYRenderizar(){
+  ALL_ACCESOS = await dbGetAllAccesos();
+  renderAll();
+}
+
+// ---------- modal: registrar nuevo ingreso ----------
+const modalIngreso = document.getElementById('modalIngreso');
+document.getElementById('btnNuevoIngreso').addEventListener('click', function(){
+  const guardia = document.getElementById('inGuardiaConfirma').value.trim();
+  const campo = document.getElementById('inCampo').value.trim();
+  const msgEl = document.getElementById('setupMsg');
+  if(!guardia || !campo){
+    msgEl.textContent = 'Escriba el nombre de quien confirma el ingreso y el Área/Campo antes de registrar un acceso.';
+    msgEl.className = 'form-msg err';
+    return;
+  }
+  msgEl.className = 'form-msg';
+  document.getElementById('modalIngresoSub').textContent = campo+' · confirma: '+guardia;
+  document.getElementById('formIngreso').reset();
+  modalFotoIDData = null;
+  document.getElementById('fotoIDPreview').style.display = 'none';
+  document.getElementById('formIngresoMsg').className = 'form-msg';
+  modalIngreso.classList.add('open');
+});
+document.getElementById('btnCancelarIngreso').addEventListener('click', function(){
+  modalIngreso.classList.remove('open');
+});
+modalIngreso.addEventListener('click', function(e){ if(e.target===modalIngreso) modalIngreso.classList.remove('open'); });
+
+document.getElementById('inFotoID').addEventListener('change', async function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const msgEl = document.getElementById('formIngresoMsg');
+  msgEl.textContent = 'Procesando foto…'; msgEl.className = 'form-msg ok';
+  try{
+    modalFotoIDData = await compressImage(file, 900, 0.6);
+    document.getElementById('fotoIDPreview').src = modalFotoIDData;
+    document.getElementById('fotoIDPreview').style.display = 'block';
+    msgEl.className = 'form-msg';
+  } catch(err){
+    msgEl.textContent = 'No se pudo procesar la foto.'; msgEl.className = 'form-msg err';
+  }
+});
+
+document.getElementById('formIngreso').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const msgEl = document.getElementById('formIngresoMsg');
+  const nombre = document.getElementById('inNombre').value.trim();
+  const tipoPersona = document.getElementById('inTipoPersona').value;
+  const areaVisita = document.getElementById('inAreaVisita').value.trim();
+  if(!nombre || !tipoPersona || !areaVisita){
+    msgEl.textContent = 'Complete nombre, tipo, y a quién/qué área visita antes de registrar.';
+    msgEl.className = 'form-msg err';
+    return;
+  }
+  const acceso = {
+    id: nextId('acceso'),
+    campo: document.getElementById('inCampo').value.trim(),
+    guardiaConfirma: document.getElementById('inGuardiaConfirma').value.trim(),
+    nombre, tipoPersona, areaVisita,
+    placas: document.getElementById('inPlacas').value.trim(),
+    gafeteNum: document.getElementById('inGafete').value.trim(),
+    tipoID: document.getElementById('inTipoID').value,
+    fotoID: modalFotoIDData,
+    nota: document.getElementById('inNotaIngreso').value.trim(),
+    horaIngreso: Date.now(),
+    horaSalida: null
+  };
+  await dbSaveAcceso(acceso);
+  modalIngreso.classList.remove('open');
+  await cargarYRenderizar();
+  const setupMsg = document.getElementById('setupMsg');
+  setupMsg.textContent = 'Ingreso registrado: '+nombre+' — '+fmtHora(acceso.horaIngreso)+'.';
+  setupMsg.className = 'form-msg ok';
+});
+
+// ---------- exportar todos los accesos ----------
+document.getElementById('btnExportarTodo').addEventListener('click', function(){
+  const blob = new Blob([JSON.stringify(ALL_ACCESOS, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fecha = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = 'control_acceso_'+fecha+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+cargarYRenderizar();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "Control de Acceso - Panel de Supervisión",
+  "short_name": "Acceso Panel",
+  "description": "Panel para importar y revisar los registros de acceso de todas las casetas",
+  "start_url": "./panel.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10141b",
+  "theme_color": "#a371f7",
+  "icons": [
+    { "src": "panel-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "panel-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "panel-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "panel-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
