@@ -3,19 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Rondines de Seguridad · App de Guardia</title>
+<title>Control de Acceso · App de Caseta</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="theme-color" content="#4f8fd6">
+<meta name="theme-color" content="#39c5cf">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Rondines">
-<!-- Usa GPS y cámara del dispositivo; no requiere conexión a internet para funcionar (el mapa se dibuja
-     como trazo de coordenadas, no como mapa de calles). Ábrase idealmente desde un servidor local o
-     como acceso directo guardado, ya que algunos navegadores restringen el GPS en archivos abiertos
-     directamente por doble clic. -->
+<meta name="apple-mobile-web-app-title" content="Acceso">
+<!-- Usa la cámara del dispositivo; no requiere conexión a internet para funcionar. Ábrase idealmente
+     desde un servidor (GitHub Pages) para que la cámara funcione sin restricciones. -->
 <style>
 
 
@@ -379,87 +377,12 @@ footer.note b{color:var(--muted);}
 
 
 
-/* ---- App de Rondines: estilos específicos ---- */
-.gps-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;}
-.gps-badge.ok{background:var(--verde-soft);color:var(--verde);}
-.gps-badge.wait{background:var(--amarillo-soft);color:var(--amarillo);}
-.gps-badge.err{background:var(--rojo-soft);color:var(--rojo);}
-.gps-badge .pulse{width:8px;height:8px;border-radius:50%;background:currentColor;box-shadow:0 0 0 0 currentColor;animation:pulse 1.6s infinite;}
-@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,185,80,.5);}70%{box-shadow:0 0 0 8px rgba(63,185,80,0);}100%{box-shadow:0 0 0 0 rgba(63,185,80,0);}}
-
-.timer-box{
-  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
-  background:linear-gradient(135deg,var(--panel),var(--panel-alt));border:1px solid var(--border);
-  border-radius:var(--radius);padding:20px 22px;margin-bottom:20px;
-}
-.timer-box .time{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:.02em;}
-.timer-box .time-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
-.timer-box .stat{text-align:center;}
-.timer-box .stat b{display:block;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:22px;}
-.timer-box .stat span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-
-.big-btn{
-  width:100%;padding:18px;border-radius:14px;border:none;font-size:16px;font-weight:700;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s, opacity .15s;
-}
-.big-btn:active{transform:scale(.98);}
-.big-btn.start{background:linear-gradient(135deg,#3fb950,#2ea043);color:#fff;}
-.big-btn.stop{background:linear-gradient(135deg,#f0554a,#d6392e);color:#fff;}
-.big-btn:disabled{opacity:.45;cursor:not-allowed;}
-
-.checkpoint-list{display:flex;flex-direction:column;gap:10px;}
-.cp-item{
-  display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border-soft);
-  border-radius:12px;padding:13px 15px;
-}
-.cp-item.done{border-color:rgba(63,185,80,.4);background:var(--verde-soft);}
-.cp-item .cp-icon{
-  width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:var(--panel-alt);color:var(--muted);flex:none;font-size:15px;
-}
-.cp-item.done .cp-icon{background:var(--verde);color:#fff;}
-.cp-item .cp-body{flex:1;min-width:0;}
-.cp-item .cp-name{font-weight:600;font-size:14px;}
-.cp-item .cp-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
-.cp-item .cp-action{flex:none;}
-.btn-mark{
-  background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;
-  font-weight:600;cursor:pointer;white-space:nowrap;
-}
-.btn-mark:active{opacity:.8;}
-.btn-mark.done{background:var(--panel-alt);color:var(--verde);border:1px solid rgba(63,185,80,.4);}
-
-.free-stop-item{
-  background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:12px 14px;
-  display:flex;gap:12px;align-items:flex-start;
-}
-.free-stop-item .thumb{width:46px;height:46px;border-radius:8px;object-fit:cover;flex:none;background:var(--panel-alt);}
-.free-stop-item .body{flex:1;min-width:0;}
-.free-stop-item .desc{font-weight:600;font-size:13.5px;}
-.free-stop-item .meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
-
-.photo-preview{
-  width:100%;max-width:220px;border-radius:10px;margin-top:10px;border:1px solid var(--border-soft);display:block;
-}
-.route-canvas-box{
-  position:relative;background:var(--panel);border:1px solid var(--border-soft);border-radius:var(--radius);
-  height:320px;
-}
-.route-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;color:var(--muted);}
-.route-legend .dot-legend{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:middle;}
-
-.history-item{
-  background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;
-  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
-}
-.history-item .h-main{font-weight:600;font-size:13.5px;}
-.history-item .h-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
-.history-item .h-actions{display:flex;gap:8px;}
-
-.modal-overlay.rondin-modal .modal-box{max-width:420px;}
+/* ---- App de Control de Acceso: estilos específicos ---- */
+.setup-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:18px;}
 .field-inline{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.field-inline label.req::after{content:' *';color:var(--rojo);}
 .field-inline label{font-size:12px;color:var(--muted);}
-.field-inline input, .field-inline textarea{
+.field-inline input, .field-inline select, .field-inline textarea{
   background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);
   font-family:inherit;font-size:14px;
 }
@@ -469,24 +392,41 @@ footer.note b{color:var(--muted);}
   border:1px dashed var(--border);border-radius:10px;padding:14px;cursor:pointer;color:var(--muted);font-size:13px;
 }
 .camera-btn:active{opacity:.8;}
-.setup-card{
-  background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:18px;
+.photo-preview{width:100%;max-width:220px;border-radius:10px;margin-top:10px;border:1px solid var(--border-soft);display:block;}
+.big-btn{
+  width:100%;padding:18px;border-radius:14px;border:none;font-size:16px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;transition:transform .1s, opacity .15s;
 }
-.chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
-.punto-qr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-top:12px;}
-.punto-qr-card{background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:12px;padding:12px;text-align:center;}
-.punto-qr-card img{width:100%;max-width:130px;border-radius:6px;background:#fff;padding:6px;}
-.punto-qr-card .pq-name{font-size:12.5px;font-weight:600;margin-top:8px;word-break:break-word;}
-.punto-qr-card .pq-actions{display:flex;gap:6px;justify-content:center;margin-top:8px;}
-.punto-qr-card .pq-actions button{font-size:11px;padding:5px 8px;border-radius:7px;border:1px solid var(--border-soft);background:var(--panel);color:var(--muted);cursor:pointer;}
-.punto-qr-card .pq-actions button:hover{border-color:var(--accent);color:var(--text);}
-.punto-qr-card .pq-actions .del{color:var(--rojo);}
-.chip{
-  display:flex;align-items:center;gap:7px;background:var(--panel-alt);border:1px solid var(--border-soft);
-  border-radius:20px;padding:6px 12px;font-size:12.5px;
+.big-btn:active{transform:scale(.98);}
+.big-btn.entrada{background:linear-gradient(135deg,#3fb950,#2ea043);color:#fff;}
+.big-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+.visitante-card{
+  display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--border-soft);
+  border-left:4px solid var(--verde);border-radius:12px;padding:13px 15px;margin-bottom:10px;
 }
-.chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;}
-.chip button:hover{color:var(--rojo);}
+.visitante-card .v-thumb{width:46px;height:46px;border-radius:8px;object-fit:cover;flex:none;background:var(--panel-alt);}
+.visitante-card .v-thumb-empty{width:46px;height:46px;border-radius:8px;flex:none;background:var(--panel-alt);display:flex;align-items:center;justify-content:center;color:var(--muted-dim);font-size:18px;}
+.visitante-card .v-body{flex:1;min-width:0;}
+.visitante-card .v-name{font-weight:600;font-size:14px;}
+.visitante-card .v-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.visitante-card .v-action{flex:none;}
+.btn-salida{background:var(--rojo);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.btn-salida:active{opacity:.8;}
+
+.gafete-pill{display:inline-flex;align-items:center;gap:4px;background:var(--panel-alt);border:1px solid var(--border-soft);border-radius:12px;padding:2px 9px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+
+.history-item{
+  background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:14px 16px;margin-bottom:10px;
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.history-item .h-main{font-weight:600;font-size:13.5px;}
+.history-item .h-sub{font-size:11.5px;color:var(--muted);margin-top:2px;}
+.history-item .h-actions{display:flex;gap:8px;}
+
+.status-pill{font-size:11px;padding:3px 9px;border-radius:12px;white-space:nowrap;font-weight:600;}
+.status-pill.DENTRO{color:var(--verde);background:var(--verde-soft);}
+.status-pill.SALIO{color:var(--muted);background:rgba(139,149,166,.14);}
 
 </style>
 </head>
@@ -502,195 +442,108 @@ footer.note b{color:var(--muted);}
         </svg>
       </div>
       <div>
-        <h1 style="font-size:22px;">Rondines de Seguridad</h1>
-        <div class="brand-sub">GPS, evidencia fotográfica, ruta y duración del recorrido — todo se guarda en este teléfono</div>
+        <h1 style="font-size:22px;">Control de Acceso</h1>
+        <div class="brand-sub">Registro de ingreso y salida de visitantes y proveedores — todo se guarda en este teléfono</div>
       </div>
     </div>
-    <span class="gps-badge wait" id="gpsBadge"><span class="pulse"></span><span id="gpsBadgeText">Ubicación: sin verificar</span></span>
   </header>
 
-  <!-- ===================== PANTALLA: CONFIGURACIÓN (sin rondín activo) ===================== -->
-  <div id="screenSetup">
-
-    <div class="setup-card">
-      <div class="section-sub" style="margin-top:0;">Identificación</div>
-      <div class="field-inline">
-        <label class="req">Guardia</label>
-        <input type="text" id="inGuardia" placeholder="Nombre completo">
-      </div>
-      <div class="field-inline">
-        <label class="req">Área / Campo</label>
-        <input type="text" id="inArea" placeholder="Ej. Campo Palomas">
-      </div>
+  <div class="setup-card">
+    <div class="section-sub" style="margin-top:0;">Identificación de la caseta</div>
+    <div class="field-inline">
+      <label class="req">Nombre de quien confirma el ingreso</label>
+      <input type="text" id="inGuardiaConfirma" placeholder="Nombre completo del guardia">
     </div>
+    <div class="field-inline" style="margin-bottom:0;">
+      <label class="req">Área / Campo</label>
+      <input type="text" id="inCampo" list="dlCampo" placeholder="Ej. Campo Palomas">
+      <datalist id="dlCampo"></datalist>
+    </div>
+  </div>
 
-    <div class="add-panel" id="panelPuntos">
-      <div class="add-panel-head" id="panelPuntosHead">
-        <h2>🛠️ Puntos de control de la ruta</h2>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="hint" id="puntosHint">0 puntos configurados</span>
-          <span class="chev">▾</span>
+  <div class="kpis" id="kpisRow"></div>
+
+  <button type="button" class="big-btn entrada" id="btnNuevoIngreso">➕ Registrar nuevo ingreso</button>
+  <div class="form-msg" id="setupMsg" style="margin-top:10px;"></div>
+
+  <div class="section-title" style="margin-top:26px;">
+    <h2>🟢 Actualmente dentro</h2>
+    <div class="desc">Visitantes y proveedores que aún no registran salida, en esta caseta</div>
+  </div>
+  <div id="dentroList"></div>
+
+  <div class="section-title" style="margin-top:26px;">
+    <h2>📋 Historial de accesos</h2>
+    <div class="desc">Guardados en este teléfono — expórtelos para enviarlos al supervisor</div>
+  </div>
+  <div class="table-toolbar" style="margin-bottom:12px;">
+    <input type="text" id="historialSearch" placeholder="Buscar por nombre, placas o gafete…">
+    <span class="table-count" id="historialCount">0 registros</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+    <button type="button" class="btn-secondary" id="btnExportarTodo">⬇ Exportar todos los accesos (JSON)</button>
+  </div>
+  <div id="historialList"></div>
+
+  <!-- ===================== MODAL: registrar nuevo ingreso ===================== -->
+  <div class="modal-overlay" id="modalIngreso">
+    <div class="modal-box" style="max-width:460px;">
+      <h3>➕ Registrar nuevo ingreso</h3>
+      <div class="modal-sub" id="modalIngresoSub">—</div>
+      <form id="formIngreso">
+        <div class="field-inline">
+          <label class="req">Nombre del proveedor / visitante</label>
+          <input type="text" id="inNombre" placeholder="Nombre completo" required>
         </div>
-      </div>
-      <div class="add-panel-body">
-        <div style="padding:16px 18px;">
-          <div style="color:var(--muted);font-size:12.5px;margin-bottom:12px;">
-            Defina aquí los puntos fijos que el guardia debe visitar en cada rondín, <b>por cada Área/Campo</b>
-            (ej. en "Campo Palomas": Oficina RH, Oficinas Producción, Caseta Norte...). Escriba primero el
-            Área/Campo en el formulario de arriba — los puntos que agregue aquí abajo se guardan para esa área
-            específica. Se guardan en este teléfono y se reutilizan en cada recorrido de esa misma área. Durante
-            el rondín también podrá agregar paradas libres adicionales que no estén en esta lista.
-          </div>
-          <div style="display:flex;gap:8px;" id="formNuevoPunto">
-            <input type="text" id="inNuevoPunto" placeholder="Nombre del punto de control" style="flex:1;background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);">
-            <button type="button" class="btn-primary" id="btnAgregarPunto" style="white-space:nowrap;">Agregar</button>
-          </div>
-          <div style="color:var(--muted);font-size:12px;margin-top:10px;">Cada punto genera un código QR único (con su área incluida). Descárguelo e imprímalo para pegarlo en esa ubicación física — durante el rondín podrá escanearlo con la cámara para marcar el punto automáticamente.</div>
-          <div class="punto-qr-grid" id="listaPuntos"></div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft);align-items:center;">
-            <button type="button" class="btn-secondary" id="btnExportarPuntos">⬇ Exportar puntos (JSON)</button>
-            <button type="button" class="btn-secondary" id="btnImportarPuntos">⬆ Importar puntos (JSON)</button>
-            <input type="file" id="fileImportPuntos" accept="application/json" style="display:none;">
-            <span style="color:var(--muted);font-size:11.5px;">Configure los puntos una sola vez y mande este archivo a los demás teléfonos, para no tener que volver a escribirlos.</span>
-          </div>
-          <div class="form-msg" id="puntosImportMsg" style="margin-top:8px;"></div>
+        <div class="field-inline">
+          <label class="req">Tipo</label>
+          <select id="inTipoPersona" required>
+            <option value="">— Seleccionar —</option>
+            <option value="Visitante">Visitante</option>
+            <option value="Proveedor">Proveedor</option>
+            <option value="Contratista">Contratista</option>
+            <option value="Otro">Otro</option>
+          </select>
         </div>
-      </div>
-    </div>
-
-    <button type="button" class="big-btn start" id="btnIniciarRondin" style="margin-top:8px;">▶ Iniciar rondín</button>
-    <div class="form-msg" id="setupMsg" style="margin-top:10px;"></div>
-
-    <div class="section-title" style="margin-top:30px;">
-      <h2>📋 Historial de rondines</h2>
-      <div class="desc">Guardados en este teléfono — expórtelos para enviarlos al supervisor</div>
-    </div>
-    <div id="historialList"></div>
-
-    <footer class="note" style="margin-top:24px;">
-      <b>Sobre los códigos QR.</b> Cada punto de control genera un QR único (botón "⬇ QR" arriba) — descárguelo,
-      imprímalo y péguelo en esa ubicación física. Durante el rondín, el botón "📷 Escanear código QR" toma una
-      foto del código y lo reconoce automáticamente, marcando el punto correcto sin que tenga que buscarlo en la
-      lista. La lectura de QR requiere un navegador compatible (Chrome en Android funciona bien); si su navegador
-      no es compatible, o el escaneo falla, puede seguir marcando cada punto manualmente con el botón "Marcar" —
-      ambos métodos registran la misma ubicación GPS, hora y evidencia fotográfica opcional.
-    </footer>
-
-  </div>
-
-  <!-- ===================== PANTALLA: RONDÍN ACTIVO ===================== -->
-  <div id="screenActivo" style="display:none;">
-
-    <div class="timer-box">
-      <div>
-        <div class="time-label">Tiempo transcurrido</div>
-        <div class="time" id="liveTimer">00:00:00</div>
-      </div>
-      <div class="stat">
-        <b id="liveDistancia">0.00</b>
-        <span>km recorridos</span>
-      </div>
-      <div class="stat">
-        <b id="liveCheckpoints">0/0</b>
-        <span>puntos marcados</span>
-      </div>
-      <div class="stat">
-        <b id="liveParadas">0</b>
-        <span>paradas libres</span>
-      </div>
-      <div class="stat">
-        <b id="liveNovedades" style="color:var(--rojo);">0</b>
-        <span>novedades</span>
-      </div>
-    </div>
-
-    <div class="section-title" style="margin-top:0;">
-      <h2>📍 Puntos de control</h2>
-      <div class="desc">Toque "Marcar" al llegar a cada punto (GPS + foto opcional), o escanee su código QR si está impreso en el lugar</div>
-    </div>
-    <button type="button" class="btn-secondary" id="btnEscanearQR" style="width:100%;margin-bottom:14px;padding:13px;">📷 Escanear código QR de un punto de control</button>
-    <input type="file" id="qrScanInput" accept="image/*" capture="environment" style="display:none;">
-    <div class="form-msg" id="qrScanMsg" style="margin-bottom:10px;"></div>
-    <div class="checkpoint-list" id="checkpointList"></div>
-
-    <button type="button" class="btn-secondary" id="btnParadaLibre" style="width:100%;margin-top:16px;padding:13px;">➕ Agregar parada libre</button>
-
-    <div id="paradasLibresWrap" style="margin-top:16px;display:none;">
-      <div class="section-sub">Paradas libres registradas</div>
-      <div class="checkpoint-list" id="paradasLibresList"></div>
-    </div>
-
-    <button type="button" class="btn-secondary" id="btnNovedad" style="width:100%;margin-top:12px;padding:13px;border-color:rgba(240,85,74,.4);color:var(--rojo);">🔍 Reportar novedad</button>
-
-    <div id="novedadesWrap" style="margin-top:16px;display:none;">
-      <div class="section-sub">Novedades reportadas</div>
-      <div class="checkpoint-list" id="novedadesList"></div>
-    </div>
-
-    <button type="button" class="big-btn stop" id="btnFinalizarRondin" style="margin-top:26px;">⏹ Finalizar rondín</button>
-  </div>
-
-  <!-- ===================== PANTALLA: RESUMEN FINAL ===================== -->
-  <div id="screenResumen" style="display:none;">
-    <div class="section-title" style="margin-top:0;">
-      <h2>✅ Rondín finalizado</h2>
-      <div class="desc" id="resumenSub">—</div>
-    </div>
-
-    <div class="kpis" id="resumenKpis"></div>
-
-    <div class="panel">
-      <h2>Ruta recorrida</h2>
-      <div class="desc">Trazo de coordenadas GPS (sin mapa de calles, funciona sin internet) · 🔵 inicio · 🔴 fin · 🟢 puntos marcados · 🟠 paradas libres · 🩷 novedades</div>
-      <div class="route-canvas-box"><canvas id="routeCanvas"></canvas></div>
-      <div class="route-legend">
-        <span><span class="dot-legend" style="background:#4f8fd6;"></span>Inicio</span>
-        <span><span class="dot-legend" style="background:#f0554a;"></span>Fin</span>
-        <span><span class="dot-legend" style="background:#3fb950;"></span>Puntos de control</span>
-        <span><span class="dot-legend" style="background:#e3b341;"></span>Paradas libres</span>
-        <span><span class="dot-legend" style="background:#e0459b;"></span>Novedades</span>
-      </div>
-    </div>
-
-    <div class="section-title">
-      <h2>Detalle de puntos y paradas</h2>
-    </div>
-    <div id="resumenDetalle"></div>
-
-    <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
-      <button type="button" class="btn-primary" id="btnExportarRondin" style="flex:1;padding:13px;">⬇ Exportar rondín (JSON)</button>
-      <button type="button" class="btn-secondary" id="btnNuevoRondin" style="flex:1;padding:13px;">🔄 Iniciar nuevo rondín</button>
-    </div>
-  </div>
-
-  <!-- ===================== MODAL: marcar punto / parada libre ===================== -->
-  <div class="modal-overlay rondin-modal" id="modalMarcar">
-    <div class="modal-box">
-      <h3 id="modalTitulo">Marcar punto</h3>
-      <div class="modal-sub" id="modalSub">—</div>
-      <div class="field-inline" id="modalDescField" style="display:none;">
-        <label class="req" id="modalDescLabel">Descripción de la parada</label>
-        <input type="text" id="modalDescripcion" placeholder="Ej. Reja trasera dañada">
-      </div>
-      <div class="field-inline" id="modalAccionField" style="display:none;">
-        <label class="req">Acción realizada</label>
-        <input type="text" id="modalAccion" placeholder="Ej. Se reportó a mantenimiento y se cerró temporalmente">
-      </div>
-      <div class="field-inline">
-        <label>Evidencia fotográfica (opcional)</label>
-        <label class="camera-btn" for="modalFotoInput">📷 Tomar / adjuntar foto</label>
-        <input type="file" id="modalFotoInput" accept="image/*" capture="environment" style="display:none;">
-        <img id="modalFotoPreview" class="photo-preview" style="display:none;">
-      </div>
-      <div class="field-inline">
-        <label>Nota (opcional)</label>
-        <textarea id="modalNota" placeholder="Observaciones..."></textarea>
-      </div>
-      <div class="form-msg" id="modalMsg"></div>
-      <div class="actions" style="display:flex;gap:10px;margin-top:6px;">
-        <button type="button" class="btn-primary" id="btnConfirmarMarca" style="flex:1;">Confirmar</button>
-        <button type="button" class="btn-secondary" id="btnCancelarMarca" style="flex:1;">Cancelar</button>
-      </div>
+        <div class="field-inline">
+          <label class="req">Área y/o persona a la que visita</label>
+          <input type="text" id="inAreaVisita" placeholder="Ej. Oficina RH — Lic. Pérez" required>
+        </div>
+        <div class="field-inline">
+          <label>Placas de vehículo (si aplica)</label>
+          <input type="text" id="inPlacas" placeholder="Ej. ABC-123-45">
+        </div>
+        <div class="field-inline">
+          <label>N° de gafete (si aplica)</label>
+          <input type="text" id="inGafete" placeholder="Ej. 014">
+        </div>
+        <div class="field-inline">
+          <label>Tipo de identificación</label>
+          <select id="inTipoID">
+            <option value="">— Seleccionar —</option>
+            <option value="INE">INE</option>
+            <option value="Licencia">Licencia de conducir</option>
+            <option value="Carnet de empresa">Carnet de empresa</option>
+            <option value="Pasaporte">Pasaporte</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="field-inline">
+          <label>Foto de identificación oficial</label>
+          <label class="camera-btn" for="inFotoID">📷 Tomar / adjuntar foto de la identificación</label>
+          <input type="file" id="inFotoID" accept="image/*" capture="environment" style="display:none;">
+          <img id="fotoIDPreview" class="photo-preview" style="display:none;">
+        </div>
+        <div class="field-inline">
+          <label>Nota (opcional)</label>
+          <textarea id="inNotaIngreso" placeholder="Observaciones..."></textarea>
+        </div>
+        <div class="form-msg" id="formIngresoMsg"></div>
+        <div class="actions" style="display:flex;gap:10px;margin-top:6px;">
+          <button type="submit" class="btn-primary" style="flex:1;">Registrar ingreso</button>
+          <button type="button" class="btn-secondary" id="btnCancelarIngreso" style="flex:1;">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -699,44 +552,25 @@ footer.note b{color:var(--muted);}
 
 const COLORS = { VERDE:'#3fb950', AMARILLO:'#e3b341', ROJO:'#f0554a', NARANJA:'#e08a4b', accent:'#4f8fd6', muted:'#8b95a6', text:'#e8ecf1' };
 
-// ---------- generador de códigos QR (kazuhikoarase/qrcode-generator, MIT) ----------
-var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,(function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1}))},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)};
-function generarQRDataURL(texto, cellSize){
-  const qr = qrcode(0, 'M');
-  qr.addData(texto);
-  qr.make();
-  return qr.createDataURL(cellSize||6, cellSize?Math.round(cellSize*1.5):8);
-}
-const QR_PREFIX = 'RONDIN_CHECKPOINT::';
-
-
-function fmtTime(ms){
-  const s = Math.floor(ms/1000);
-  const hh = String(Math.floor(s/3600)).padStart(2,'0');
-  const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
-  const ss = String(s%60).padStart(2,'0');
-  return hh+':'+mm+':'+ss;
-}
 function fmtDateTime(ts){
+  if(!ts) return '—';
   const d = new Date(ts);
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
 }
-function haversineKm(a, b){
-  const R = 6371;
-  const dLat = (b.lat-a.lat)*Math.PI/180;
-  const dLng = (b.lng-a.lng)*Math.PI/180;
-  const lat1 = a.lat*Math.PI/180, lat2 = b.lat*Math.PI/180;
-  const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
-  return R * 2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
+function fmtHora(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
 }
-function routeDistanceKm(points){
-  let d = 0;
-  for(let i=1;i<points.length;i++){ d += haversineKm(points[i-1], points[i]); }
-  return d;
+function fmtDuracion(ini,fin){
+  if(!ini) return '—';
+  const ms = (fin||Date.now()) - ini;
+  const mins = Math.floor(ms/60000);
+  const h = Math.floor(mins/60), m = mins%60;
+  return h>0 ? (h+'h '+m+'min') : (m+' min');
 }
 function nextId(prefix){ return prefix+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
 
-// ---------- comprimir foto antes de guardar (para no llenar el almacenamiento del teléfono) ----------
+// ---------- comprimir foto antes de guardar ----------
 function compressImage(file, maxDim, quality){
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
@@ -759,9 +593,9 @@ function compressImage(file, maxDim, quality){
   });
 }
 
-// ---------- IndexedDB: historial de rondines (guarda fotos, más espacio que localStorage) ----------
-const DB_NAME = 'rondines_guardia_db';
-const DB_STORE = 'rondines';
+// ---------- IndexedDB: historial de accesos (guarda fotos, más espacio que localStorage) ----------
+const DB_NAME = 'control_acceso_db';
+const DB_STORE = 'accesos';
 let _dbPromise = null;
 function openDB(){
   if(_dbPromise) return _dbPromise;
@@ -769,25 +603,23 @@ function openDB(){
     const req = indexedDB.open(DB_NAME, 1);
     req.onupgradeneeded = function(){
       const db = req.result;
-      if(!db.objectStoreNames.contains(DB_STORE)){
-        db.createObjectStore(DB_STORE, {keyPath:'id'});
-      }
+      if(!db.objectStoreNames.contains(DB_STORE)) db.createObjectStore(DB_STORE, {keyPath:'id'});
     };
     req.onsuccess = ()=>resolve(req.result);
     req.onerror = ()=>reject(req.error);
   });
   return _dbPromise;
 }
-async function dbSaveRondin(rondin){
+async function dbSaveAcceso(acceso){
   const db = await openDB();
   return new Promise((resolve,reject)=>{
     const tx = db.transaction(DB_STORE,'readwrite');
-    tx.objectStore(DB_STORE).put(rondin);
+    tx.objectStore(DB_STORE).put(acceso);
     tx.oncomplete = ()=>resolve(true);
     tx.onerror = ()=>reject(tx.error);
   });
 }
-async function dbGetAllRondines(){
+async function dbGetAllAccesos(){
   const db = await openDB();
   return new Promise((resolve,reject)=>{
     const tx = db.transaction(DB_STORE,'readonly');
@@ -796,7 +628,7 @@ async function dbGetAllRondines(){
     req.onerror = ()=>reject(req.error);
   });
 }
-async function dbDeleteRondin(id){
+async function dbDeleteAcceso(id){
   const db = await openDB();
   return new Promise((resolve,reject)=>{
     const tx = db.transaction(DB_STORE,'readwrite');
@@ -806,618 +638,219 @@ async function dbDeleteRondin(id){
   });
 }
 
-// ---------- plantilla de puntos de control, organizada POR CAMPO/ÁREA ----------
-// Formato: { "Campo Palomas": ["Oficina RH", "Oficinas Producción"], "Campo Empaque": [...] }
-const PUNTOS_KEY = 'rondines_puntos_v2';
-function loadPuntosPorArea(){
-  try{
-    const raw = localStorage.getItem(PUNTOS_KEY);
-    if(!raw) return {};
-    const data = JSON.parse(raw);
-    if(Array.isArray(data)) return {}; // formato viejo (lista plana) — se descarta, no aplica a ningún área específica
-    return data;
-  } catch(e){ return {}; }
-}
-function savePuntosPorArea(obj){ try{ localStorage.setItem(PUNTOS_KEY, JSON.stringify(obj)); return true; }catch(e){ return false; } }
-function getPuntosDeArea(area){
-  const todo = loadPuntosPorArea();
-  const key = Object.keys(todo).find(k=>k.trim().toLowerCase()===area.trim().toLowerCase());
-  return key ? todo[key] : [];
-}
-function areaActualEnPanel(){ return document.getElementById('inArea').value.trim(); }
+let ALL_ACCESOS = [];
+let modalFotoIDData = null;
 
-function renderPuntosList(){
-  const area = areaActualEnPanel();
-  const hintEl = document.getElementById('puntosHint');
-  const listaEl = document.getElementById('listaPuntos');
-  const formEl = document.getElementById('formNuevoPunto');
-  if(!area){
-    hintEl.textContent = 'escriba un área arriba primero';
-    listaEl.innerHTML = '<span style="color:var(--muted);font-size:12px;">Escriba el nombre del Área / Campo en el formulario de arriba para administrar sus puntos de control.</span>';
-    formEl.style.display = 'none';
+function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
+function avg(arr){ return arr.length ? sum(arr)/arr.length : 0; }
+
+// ---------- KPIs ----------
+function renderKpis(){
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const hoyTs = hoy.getTime();
+  const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida);
+  const hoyRegistros = ALL_ACCESOS.filter(a=>a.horaIngreso>=hoyTs);
+  const duracionesHoy = hoyRegistros.filter(a=>a.horaSalida).map(a=>(a.horaSalida-a.horaIngreso)/60000);
+
+  document.getElementById('kpisRow').innerHTML = `
+    <div class="kpi semaforo"><div class="kpi-accentbar"></div>
+      <div class="label">Actualmente dentro</div>
+      <div class="value"><span class="dot ${dentro.length>0?'AMARILLO':'VERDE'}"></span>${dentro.length}</div>
+      <div class="sub">en esta caseta</div>
+    </div>
+    <div class="kpi"><div class="kpi-accentbar"></div>
+      <div class="label">Registros de hoy</div>
+      <div class="value">${hoyRegistros.length}</div>
+      <div class="sub">ingresos registrados</div>
+    </div>
+    <div class="kpi"><div class="kpi-accentbar"></div>
+      <div class="label">Duración promedio</div>
+      <div class="value">${duracionesHoy.length ? Math.round(avg(duracionesHoy))+' min' : '—'}</div>
+      <div class="sub">visitas de hoy ya salidas</div>
+    </div>
+    <div class="kpi"><div class="kpi-accentbar"></div>
+      <div class="label">Total histórico</div>
+      <div class="value">${ALL_ACCESOS.length}</div>
+      <div class="sub">en este teléfono</div>
+    </div>
+  `;
+}
+
+// ---------- lista de "actualmente dentro" ----------
+function renderDentroList(){
+  const cont = document.getElementById('dentroList');
+  const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida).sort((a,b)=>b.horaIngreso-a.horaIngreso);
+  if(dentro.length===0){
+    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;">No hay nadie registrado como "dentro" en este momento.</div>';
     return;
   }
-  formEl.style.display = 'flex';
-  const puntos = getPuntosDeArea(area);
-  hintEl.textContent = puntos.length+' punto'+(puntos.length===1?'':'s')+' en "'+area+'"';
-  listaEl.innerHTML = puntos.map((p,i)=>{
-    let qrSrc = '';
-    try{ qrSrc = generarQRDataURL(QR_PREFIX+area+'::'+p, 5); } catch(e){ console.error('No se pudo generar QR para', p, e); }
-    return `
-    <div class="punto-qr-card">
-      ${qrSrc ? `<img src="${qrSrc}" alt="QR de ${p}">` : '<div style="color:var(--muted);font-size:11px;">QR no disponible</div>'}
-      <div class="pq-name">${p}</div>
-      <div class="pq-actions">
-        <button type="button" class="btn-download-qr" data-idx="${i}" data-nombre="${p}">⬇ QR</button>
-        <button type="button" class="btn-del-punto del" data-idx="${i}">✕ Quitar</button>
+  cont.innerHTML = dentro.map(a=>`
+    <div class="visitante-card">
+      ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
+      <div class="v-body">
+        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span></div>
+        <div class="v-meta">
+          Entró ${fmtHora(a.horaIngreso)} (${fmtDuracion(a.horaIngreso, null)}) · Visita: ${a.areaVisita}
+          ${a.placas ? ' · <span class="gafete-pill">🚗 '+a.placas+'</span>' : ''}
+          ${a.gafeteNum ? ' · <span class="gafete-pill">🪪 #'+a.gafeteNum+'</span>' : ''}
+        </div>
+      </div>
+      <div class="v-action">
+        <button type="button" class="btn-salida" data-id="${a.id}">Registrar salida</button>
+      </div>
+    </div>
+  `).join('');
+}
+document.getElementById('dentroList').addEventListener('click', async function(e){
+  const btn = e.target.closest('.btn-salida');
+  if(!btn) return;
+  const id = btn.getAttribute('data-id');
+  const acceso = ALL_ACCESOS.find(a=>a.id===id);
+  if(!acceso) return;
+  if(!confirm('¿Registrar la salida de '+acceso.nombre+' ahora?')) return;
+  acceso.horaSalida = Date.now();
+  await dbSaveAcceso(acceso);
+  renderAll();
+});
+
+// ---------- historial ----------
+function renderHistorial(){
+  const q = (document.getElementById('historialSearch').value||'').toLowerCase().trim();
+  let lista = ALL_ACCESOS.slice().sort((a,b)=>b.horaIngreso-a.horaIngreso);
+  if(q){
+    lista = lista.filter(a=>
+      (a.nombre||'').toLowerCase().includes(q) ||
+      (a.placas||'').toLowerCase().includes(q) ||
+      (a.gafeteNum||'').toLowerCase().includes(q)
+    );
+  }
+  document.getElementById('historialCount').textContent = lista.length + (lista.length===1?' registro':' registros');
+  document.getElementById('historialList').innerHTML = lista.map(a=>{
+    const estado = a.horaSalida ? 'SALIO' : 'DENTRO';
+    return `<div class="history-item">
+      <div style="display:flex;gap:12px;align-items:center;">
+        ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
+        <div>
+          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span></div>
+          <div class="h-sub">${a.campo} · ${a.tipoPersona} · Visita: ${a.areaVisita}</div>
+          <div class="h-sub">Ingreso: ${fmtDateTime(a.horaIngreso)} ${a.horaSalida ? ('· Salida: '+fmtDateTime(a.horaSalida)+' · '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ''}</div>
+        </div>
+      </div>
+      <div class="h-actions">
+        <button type="button" class="del-btn btn-del-acceso" data-id="${a.id}">✕</button>
       </div>
     </div>`;
-  }).join('') || '<span style="color:var(--muted);font-size:12px;">Aún no hay puntos configurados para esta área.</span>';
+  }).join('');
 }
-document.getElementById('inArea').addEventListener('input', renderPuntosList);
-document.getElementById('btnAgregarPunto').addEventListener('click', function(){
-  const area = areaActualEnPanel();
-  if(!area) return;
-  const input = document.getElementById('inNuevoPunto');
-  const val = input.value.trim();
-  if(!val) return;
-  const todo = loadPuntosPorArea();
-  if(!todo[area]) todo[area] = [];
-  todo[area].push(val);
-  savePuntosPorArea(todo);
-  input.value = '';
-  renderPuntosList();
-});
-document.getElementById('inNuevoPunto').addEventListener('keydown', function(e){
-  if(e.key==='Enter'){ e.preventDefault(); document.getElementById('btnAgregarPunto').click(); }
-});
-document.getElementById('listaPuntos').addEventListener('click', function(e){
-  const area = areaActualEnPanel();
-  const delBtn = e.target.closest('.btn-del-punto');
-  if(delBtn){
-    const idx = parseInt(delBtn.getAttribute('data-idx'),10);
-    const todo = loadPuntosPorArea();
-    if(todo[area]){ todo[area].splice(idx,1); savePuntosPorArea(todo); }
-    renderPuntosList();
-    return;
-  }
-  const dlBtn = e.target.closest('.btn-download-qr');
-  if(dlBtn){
-    const nombre = dlBtn.getAttribute('data-nombre');
-    const dataUrl = generarQRDataURL(QR_PREFIX+area+'::'+nombre, 8);
-    const a = document.createElement('a');
-    a.href = dataUrl; a.download = 'QR_'+area.replace(/\s+/g,'_')+'_'+nombre.replace(/\s+/g,'_')+'.gif';
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  }
-});
-renderPuntosList();
-
-const panelPuntos = document.getElementById('panelPuntos');
-document.getElementById('panelPuntosHead').addEventListener('click', ()=>{ panelPuntos.classList.toggle('open'); });
-
-// ---------- exportar / importar la plantilla de puntos de control (todas las áreas) ----------
-document.getElementById('btnExportarPuntos').addEventListener('click', function(){
-  const todo = loadPuntosPorArea();
-  const blob = new Blob([JSON.stringify(todo, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'puntos_de_control_rondines.json';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-});
-document.getElementById('btnImportarPuntos').addEventListener('click', function(){
-  document.getElementById('fileImportPuntos').click();
-});
-document.getElementById('fileImportPuntos').addEventListener('change', function(e){
-  const file = e.target.files[0];
-  const msgEl = document.getElementById('puntosImportMsg');
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev){
-    try{
-      const imported = JSON.parse(ev.target.result);
-      if(Array.isArray(imported) || typeof imported!=='object' || imported===null) throw new Error('El archivo no tiene el formato esperado (debe ser puntos organizados por área).');
-      const actuales = loadPuntosPorArea();
-      let totalPuntos = 0, totalAreas = 0;
-      Object.keys(imported).forEach(area=>{
-        if(!Array.isArray(imported[area])) return;
-        totalAreas++;
-        if(!actuales[area]) actuales[area] = [];
-        imported[area].forEach(p=>{
-          totalPuntos++;
-          if(!actuales[area].includes(p)) actuales[area].push(p);
-        });
-      });
-      savePuntosPorArea(actuales);
-      renderPuntosList();
-      msgEl.textContent = totalPuntos+' punto(s) de '+totalAreas+' área(s) importados — se combinaron con los que ya tenía (sin duplicar).';
-      msgEl.className = 'form-msg ok';
-    } catch(err){
-      msgEl.textContent = 'No se pudo leer el archivo: '+err.message;
-      msgEl.className = 'form-msg err';
-    }
-    document.getElementById('fileImportPuntos').value = '';
-  };
-  reader.readAsText(file);
-});
-
-// ---------- geolocalización ----------
-let watchId = null;
-let lastPosition = null; // {lat,lng,acc,ts}
-let gpsOk = false;
-
-function updateGpsBadge(state, text){
-  const badge = document.getElementById('gpsBadge');
-  const txt = document.getElementById('gpsBadgeText');
-  badge.className = 'gps-badge '+state;
-  txt.textContent = text;
-}
-
-function startWatchingGPS(){
-  if(!navigator.geolocation){
-    updateGpsBadge('err', 'Este navegador no soporta geolocalización');
-    return;
-  }
-  updateGpsBadge('wait', 'Obteniendo ubicación…');
-  watchId = navigator.geolocation.watchPosition(function(pos){
-    lastPosition = {
-      lat: pos.coords.latitude, lng: pos.coords.longitude,
-      acc: pos.coords.accuracy, ts: Date.now()
-    };
-    gpsOk = true;
-    updateGpsBadge('ok', 'Ubicación activa · precisión ±'+Math.round(pos.coords.accuracy)+' m');
-    if(rondinActivo){ registrarPuntoRuta(lastPosition); }
-  }, function(err){
-    gpsOk = false;
-    let msg = 'No se pudo obtener la ubicación';
-    if(err.code===1) msg = 'Permiso de ubicación denegado — actívelo en el navegador';
-    else if(err.code===2) msg = 'Ubicación no disponible en este momento';
-    else if(err.code===3) msg = 'Tiempo de espera agotado obteniendo ubicación';
-    updateGpsBadge('err', msg);
-  }, { enableHighAccuracy:true, maximumAge:5000, timeout:15000 });
-}
-startWatchingGPS();
-
-// ---------- estado del rondín activo ----------
-let rondinActivo = null; // objeto en construcción mientras el rondín está en curso
-let timerInterval = null;
-let lastRoutePointTs = 0;
-
-function registrarPuntoRuta(pos){
-  if(!rondinActivo) return;
-  // no saturar el arreglo: solo agregar si pasaron >=4s o se movió lo suficiente
-  const now = Date.now();
-  const ultimo = rondinActivo.ruta[rondinActivo.ruta.length-1];
-  if(ultimo){
-    const dist = haversineKm(ultimo, pos) * 1000; // metros
-    if(now-lastRoutePointTs < 4000 && dist < 8) return;
-  }
-  lastRoutePointTs = now;
-  rondinActivo.ruta.push(pos);
-  updateLiveStats();
-}
-
-function updateLiveStats(){
-  if(!rondinActivo) return;
-  document.getElementById('liveDistancia').textContent = routeDistanceKm(rondinActivo.ruta).toFixed(2);
-  const marcados = rondinActivo.checkpoints.filter(c=>c.marcado).length;
-  document.getElementById('liveCheckpoints').textContent = marcados+'/'+rondinActivo.checkpoints.length;
-  document.getElementById('liveParadas').textContent = rondinActivo.paradasLibres.length;
-  document.getElementById('liveNovedades').textContent = rondinActivo.novedades.length;
-}
-
-function renderCheckpointList(){
-  const cont = document.getElementById('checkpointList');
-  if(rondinActivo.checkpoints.length===0){
-    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;">No hay puntos de control configurados — puede usar solo paradas libres.</div>';
-    return;
-  }
-  cont.innerHTML = rondinActivo.checkpoints.map((c,i)=>`
-    <div class="cp-item ${c.marcado?'done':''}">
-      <div class="cp-icon">${c.marcado?'✓':(i+1)}</div>
-      <div class="cp-body">
-        <div class="cp-name">${c.nombre}</div>
-        <div class="cp-meta">${c.marcado ? ('Marcado '+fmtDateTime(c.ts)+(c.viaQR?' · 📷QR':'')+(c.foto?' · 🖼️':'')) : 'Pendiente'}</div>
-      </div>
-      <div class="cp-action">
-        <button type="button" class="btn-mark ${c.marcado?'done':''}" data-idx="${i}">${c.marcado?'Editar':'Marcar'}</button>
-      </div>
-    </div>
-  `).join('');
-}
-function renderParadasLibresList(){
-  const wrap = document.getElementById('paradasLibresWrap');
-  const cont = document.getElementById('paradasLibresList');
-  if(rondinActivo.paradasLibres.length===0){ wrap.style.display='none'; return; }
-  wrap.style.display='block';
-  cont.innerHTML = rondinActivo.paradasLibres.map((p,i)=>`
-    <div class="cp-item done">
-      <div class="cp-icon">📍</div>
-      <div class="cp-body">
-        <div class="cp-name">${p.descripcion}</div>
-        <div class="cp-meta">${fmtDateTime(p.ts)}${p.foto?' · 📷':''}${p.nota?' · '+p.nota:''}</div>
-      </div>
-    </div>
-  `).join('');
-}
-function renderNovedadesList(){
-  const wrap = document.getElementById('novedadesWrap');
-  const cont = document.getElementById('novedadesList');
-  if(rondinActivo.novedades.length===0){ wrap.style.display='none'; return; }
-  wrap.style.display='block';
-  cont.innerHTML = rondinActivo.novedades.map((n,i)=>`
-    <div class="cp-item" style="border-color:rgba(240,85,74,.4);background:var(--rojo-soft);">
-      <div class="cp-icon" style="background:var(--rojo);color:#fff;">🔍</div>
-      <div class="cp-body">
-        <div class="cp-name">${n.descripcion}</div>
-        <div class="cp-meta">✅ ${n.accion}</div>
-        <div class="cp-meta">${fmtDateTime(n.ts)}${n.foto?' · 📷':''}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-document.getElementById('checkpointList').addEventListener('click', function(e){
-  const btn = e.target.closest('.btn-mark');
+document.getElementById('historialSearch').addEventListener('input', renderHistorial);
+document.getElementById('historialList').addEventListener('click', async function(e){
+  const btn = e.target.closest('.btn-del-acceso');
   if(!btn) return;
-  const idx = parseInt(btn.getAttribute('data-idx'),10);
-  abrirModalMarca({tipo:'checkpoint', idx});
-});
-document.getElementById('btnParadaLibre').addEventListener('click', function(){
-  abrirModalMarca({tipo:'parada'});
+  if(!confirm('¿Eliminar este registro de acceso? Esta acción no se puede deshacer.')) return;
+  await dbDeleteAcceso(btn.getAttribute('data-id'));
+  await cargarYRenderizar();
 });
 
-// ---------- escanear código QR de un punto de control ----------
-const QR_SCAN_SUPPORTED = ('BarcodeDetector' in window);
-if(!QR_SCAN_SUPPORTED){
-  document.getElementById('btnEscanearQR').title = 'Su navegador no soporta lectura de QR — use Chrome en Android, o marque el punto manualmente';
+// ---------- campo datalist ----------
+function refreshCampoDatalist(){
+  const campos = Array.from(new Set(ALL_ACCESOS.map(a=>a.campo))).sort();
+  document.getElementById('dlCampo').innerHTML = campos.map(c=>`<option value="${c}">`).join('');
 }
-document.getElementById('btnEscanearQR').addEventListener('click', function(){
-  if(!QR_SCAN_SUPPORTED){
-    const msgEl = document.getElementById('qrScanMsg');
-    msgEl.textContent = 'Este navegador no puede leer códigos QR (pruebe con Chrome en Android). Puede marcar el punto manualmente con el botón "Marcar".';
+
+function renderAll(){
+  renderKpis();
+  renderDentroList();
+  renderHistorial();
+  refreshCampoDatalist();
+}
+async function cargarYRenderizar(){
+  ALL_ACCESOS = await dbGetAllAccesos();
+  renderAll();
+}
+
+// ---------- modal: registrar nuevo ingreso ----------
+const modalIngreso = document.getElementById('modalIngreso');
+document.getElementById('btnNuevoIngreso').addEventListener('click', function(){
+  const guardia = document.getElementById('inGuardiaConfirma').value.trim();
+  const campo = document.getElementById('inCampo').value.trim();
+  const msgEl = document.getElementById('setupMsg');
+  if(!guardia || !campo){
+    msgEl.textContent = 'Escriba el nombre de quien confirma el ingreso y el Área/Campo antes de registrar un acceso.';
     msgEl.className = 'form-msg err';
     return;
   }
-  document.getElementById('qrScanInput').click();
+  msgEl.className = 'form-msg';
+  document.getElementById('modalIngresoSub').textContent = campo+' · confirma: '+guardia;
+  document.getElementById('formIngreso').reset();
+  modalFotoIDData = null;
+  document.getElementById('fotoIDPreview').style.display = 'none';
+  document.getElementById('formIngresoMsg').className = 'form-msg';
+  modalIngreso.classList.add('open');
 });
-document.getElementById('qrScanInput').addEventListener('change', async function(e){
-  const file = e.target.files[0];
-  const msgEl = document.getElementById('qrScanMsg');
-  if(!file) return;
-  msgEl.textContent = 'Leyendo código QR…'; msgEl.className = 'form-msg ok';
-  try{
-    const bitmap = await createImageBitmap(file);
-    const detector = new BarcodeDetector({formats:['qr_code']});
-    const results = await detector.detect(bitmap);
-    if(!results.length){
-      msgEl.textContent = 'No se detectó ningún código QR en la foto. Intente de nuevo con mejor luz/enfoque, o marque el punto manualmente.';
-      msgEl.className = 'form-msg err';
-      return;
-    }
-    const raw = results[0].rawValue || '';
-    if(!raw.startsWith(QR_PREFIX)){
-      msgEl.textContent = 'Este código QR no corresponde a un punto de control de este rondín.';
-      msgEl.className = 'form-msg err';
-      return;
-    }
-    const resto = raw.slice(QR_PREFIX.length);
-    const sepIdx = resto.indexOf('::');
-    const areaQR = sepIdx>-1 ? resto.slice(0,sepIdx) : '';
-    const nombre = sepIdx>-1 ? resto.slice(sepIdx+2) : resto;
-    if(areaQR && areaQR.trim().toLowerCase()!==rondinActivo.area.trim().toLowerCase()){
-      msgEl.textContent = 'Este QR es del área "'+areaQR+'", pero este rondín es de "'+rondinActivo.area+'". Verifique que esté en el campo correcto.';
-      msgEl.className = 'form-msg err';
-      return;
-    }
-    const idx = rondinActivo.checkpoints.findIndex(c=>c.nombre===nombre);
-    if(idx===-1){
-      msgEl.textContent = 'El QR corresponde a "'+nombre+'", que no está en la ruta configurada de este rondín.';
-      msgEl.className = 'form-msg err';
-      return;
-    }
-    msgEl.textContent = 'Punto reconocido: "'+nombre+'". Complete la evidencia si desea.';
-    msgEl.className = 'form-msg ok';
-    abrirModalMarca({tipo:'checkpoint', idx, viaQR:true});
-  } catch(err){
-    console.error(err);
-    msgEl.textContent = 'No se pudo leer la imagen. Intente de nuevo.';
-    msgEl.className = 'form-msg err';
-  } finally {
-    document.getElementById('qrScanInput').value = '';
-  }
+document.getElementById('btnCancelarIngreso').addEventListener('click', function(){
+  modalIngreso.classList.remove('open');
 });
+modalIngreso.addEventListener('click', function(e){ if(e.target===modalIngreso) modalIngreso.classList.remove('open'); });
 
-// ---------- modal de marcar punto / parada libre ----------
-const modalMarcar = document.getElementById('modalMarcar');
-let modalContexto = null;
-let modalFotoData = null;
-
-function abrirModalMarca(ctx){
-  modalContexto = ctx;
-  modalFotoData = null;
-  document.getElementById('modalFotoPreview').style.display = 'none';
-  document.getElementById('modalFotoInput').value = '';
-  document.getElementById('modalNota').value = '';
-  document.getElementById('modalAccionField').style.display = 'none';
-  document.getElementById('modalAccion').value = '';
-  document.getElementById('modalMsg').className = 'form-msg';
-  const gpsTxt = gpsOk ? 'Se registrará su ubicación actual' : 'Sin ubicación GPS aún — se guardará sin coordenadas';
-  if(ctx.tipo==='checkpoint'){
-    const cp = rondinActivo.checkpoints[ctx.idx];
-    document.getElementById('modalTitulo').textContent = (cp.marcado?'Editar':'Marcar')+' punto: '+cp.nombre;
-    document.getElementById('modalSub').textContent = ctx.viaQR ? ('✅ Confirmado por código QR · '+gpsTxt) : gpsTxt;
-    document.getElementById('modalDescField').style.display = 'none';
-    if(cp.nota) document.getElementById('modalNota').value = cp.nota;
-    if(cp.foto){ modalFotoData = cp.foto; document.getElementById('modalFotoPreview').src = cp.foto; document.getElementById('modalFotoPreview').style.display='block'; }
-  } else if(ctx.tipo==='novedad'){
-    document.getElementById('modalTitulo').textContent = '🔍 Reportar novedad';
-    document.getElementById('modalSub').textContent = gpsTxt;
-    document.getElementById('modalDescField').style.display = 'block';
-    document.getElementById('modalDescLabel').textContent = 'Novedad encontrada';
-    document.getElementById('modalDescripcion').placeholder = 'Ej. Candado forzado en almacén 2';
-    document.getElementById('modalDescripcion').value = '';
-    document.getElementById('modalAccionField').style.display = 'block';
-  } else {
-    document.getElementById('modalTitulo').textContent = 'Agregar parada libre';
-    document.getElementById('modalSub').textContent = gpsTxt;
-    document.getElementById('modalDescField').style.display = 'block';
-    document.getElementById('modalDescLabel').textContent = 'Descripción de la parada';
-    document.getElementById('modalDescripcion').placeholder = 'Ej. Reja trasera dañada';
-    document.getElementById('modalDescripcion').value = '';
-  }
-  modalMarcar.classList.add('open');
-}
-document.getElementById('btnNovedad').addEventListener('click', function(){
-  abrirModalMarca({tipo:'novedad'});
-});
-function cerrarModalMarca(){ modalMarcar.classList.remove('open'); modalContexto = null; }
-document.getElementById('btnCancelarMarca').addEventListener('click', cerrarModalMarca);
-modalMarcar.addEventListener('click', function(e){ if(e.target===modalMarcar) cerrarModalMarca(); });
-
-document.getElementById('modalFotoInput').addEventListener('change', async function(e){
+document.getElementById('inFotoID').addEventListener('change', async function(e){
   const file = e.target.files[0];
   if(!file) return;
-  const msgEl = document.getElementById('modalMsg');
+  const msgEl = document.getElementById('formIngresoMsg');
   msgEl.textContent = 'Procesando foto…'; msgEl.className = 'form-msg ok';
   try{
-    modalFotoData = await compressImage(file, 900, 0.6);
-    document.getElementById('modalFotoPreview').src = modalFotoData;
-    document.getElementById('modalFotoPreview').style.display = 'block';
+    modalFotoIDData = await compressImage(file, 900, 0.6);
+    document.getElementById('fotoIDPreview').src = modalFotoIDData;
+    document.getElementById('fotoIDPreview').style.display = 'block';
     msgEl.className = 'form-msg';
   } catch(err){
     msgEl.textContent = 'No se pudo procesar la foto.'; msgEl.className = 'form-msg err';
   }
 });
 
-document.getElementById('btnConfirmarMarca').addEventListener('click', function(){
-  if(!modalContexto) return;
-  const nota = document.getElementById('modalNota').value.trim();
-  const pos = lastPosition || {lat:null, lng:null, acc:null};
-  const ts = Date.now();
-  const msgEl = document.getElementById('modalMsg');
-
-  if(modalContexto.tipo==='checkpoint'){
-    const cp = rondinActivo.checkpoints[modalContexto.idx];
-    cp.marcado = true; cp.lat = pos.lat; cp.lng = pos.lng; cp.acc = pos.acc; cp.ts = ts;
-    cp.foto = modalFotoData; cp.nota = nota; cp.viaQR = !!modalContexto.viaQR;
-    if(pos.lat!=null) rondinActivo.ruta.push(Object.assign({tipo:'checkpoint'}, pos));
-  } else if(modalContexto.tipo==='novedad'){
-    const desc = document.getElementById('modalDescripcion').value.trim();
-    const accion = document.getElementById('modalAccion').value.trim();
-    if(!desc){ msgEl.textContent = 'Describa la novedad encontrada.'; msgEl.className = 'form-msg err'; return; }
-    if(!accion){ msgEl.textContent = 'Escriba la acción realizada — es indispensable para medir la efectividad del rondín.'; msgEl.className = 'form-msg err'; return; }
-    rondinActivo.novedades.push({ descripcion: desc, accion, lat:pos.lat, lng:pos.lng, acc:pos.acc, ts, foto: modalFotoData, nota });
-    if(pos.lat!=null) rondinActivo.ruta.push(Object.assign({tipo:'novedad'}, pos));
-  } else {
-    const desc = document.getElementById('modalDescripcion').value.trim();
-    if(!desc){
-      msgEl.textContent = 'Escriba una breve descripción de la parada.'; msgEl.className = 'form-msg err';
-      return;
-    }
-    rondinActivo.paradasLibres.push({ descripcion: desc, lat:pos.lat, lng:pos.lng, acc:pos.acc, ts, foto: modalFotoData, nota });
-    if(pos.lat!=null) rondinActivo.ruta.push(Object.assign({tipo:'parada'}, pos));
-  }
-  cerrarModalMarca();
-  renderCheckpointList();
-  renderParadasLibresList();
-  renderNovedadesList();
-  updateLiveStats();
-});
-
-// ---------- iniciar / finalizar rondín ----------
-function showScreen(name){
-  document.getElementById('screenSetup').style.display = name==='setup' ? 'block' : 'none';
-  document.getElementById('screenActivo').style.display = name==='activo' ? 'block' : 'none';
-  document.getElementById('screenResumen').style.display = name==='resumen' ? 'block' : 'none';
-}
-
-document.getElementById('btnIniciarRondin').addEventListener('click', function(){
-  const guardia = document.getElementById('inGuardia').value.trim();
-  const area = document.getElementById('inArea').value.trim();
-  const msgEl = document.getElementById('setupMsg');
-  if(!guardia || !area){
-    msgEl.textContent = 'Escriba el nombre del guardia y el área antes de iniciar.';
+document.getElementById('formIngreso').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const msgEl = document.getElementById('formIngresoMsg');
+  const nombre = document.getElementById('inNombre').value.trim();
+  const tipoPersona = document.getElementById('inTipoPersona').value;
+  const areaVisita = document.getElementById('inAreaVisita').value.trim();
+  if(!nombre || !tipoPersona || !areaVisita){
+    msgEl.textContent = 'Complete nombre, tipo, y a quién/qué área visita antes de registrar.';
     msgEl.className = 'form-msg err';
     return;
   }
-  const puntos = getPuntosDeArea(area);
-  rondinActivo = {
-    id: nextId('rondin'),
-    guardia, area,
-    inicio: Date.now(), fin: null,
-    checkpoints: puntos.map(nombre=>({nombre, marcado:false, lat:null,lng:null,ts:null,foto:null,nota:''})),
-    paradasLibres: [],
-    novedades: [],
-    ruta: lastPosition ? [Object.assign({tipo:'inicio'}, lastPosition)] : []
+  const acceso = {
+    id: nextId('acceso'),
+    campo: document.getElementById('inCampo').value.trim(),
+    guardiaConfirma: document.getElementById('inGuardiaConfirma').value.trim(),
+    nombre, tipoPersona, areaVisita,
+    placas: document.getElementById('inPlacas').value.trim(),
+    gafeteNum: document.getElementById('inGafete').value.trim(),
+    tipoID: document.getElementById('inTipoID').value,
+    fotoID: modalFotoIDData,
+    nota: document.getElementById('inNotaIngreso').value.trim(),
+    horaIngreso: Date.now(),
+    horaSalida: null
   };
-  lastRoutePointTs = Date.now();
-  showScreen('activo');
-  renderCheckpointList();
-  renderParadasLibresList();
-  renderNovedadesList();
-  updateLiveStats();
-  timerInterval = setInterval(function(){
-    document.getElementById('liveTimer').textContent = fmtTime(Date.now()-rondinActivo.inicio);
-  }, 1000);
+  await dbSaveAcceso(acceso);
+  modalIngreso.classList.remove('open');
+  await cargarYRenderizar();
+  const setupMsg = document.getElementById('setupMsg');
+  setupMsg.textContent = 'Ingreso registrado: '+nombre+' — '+fmtHora(acceso.horaIngreso)+'.';
+  setupMsg.className = 'form-msg ok';
 });
 
-document.getElementById('btnFinalizarRondin').addEventListener('click', function(){
-  if(!confirm('¿Finalizar el rondín? Podrá exportarlo y guardarlo en el resumen final.')) return;
-  rondinActivo.fin = Date.now();
-  if(lastPosition) rondinActivo.ruta.push(Object.assign({tipo:'fin'}, lastPosition));
-  clearInterval(timerInterval);
-  mostrarResumen(rondinActivo);
-});
-
-async function mostrarResumen(rondin){
-  showScreen('resumen');
-  const durMin = Math.round((rondin.fin - rondin.inicio)/60000);
-  const distKm = routeDistanceKm(rondin.ruta);
-  const marcados = rondin.checkpoints.filter(c=>c.marcado).length;
-  const totalCp = rondin.checkpoints.length;
-  const numNovedades = rondin.novedades.length;
-
-  document.getElementById('resumenSub').textContent = rondin.guardia+' · '+rondin.area+' · '+fmtDateTime(rondin.inicio)+' a '+fmtDateTime(rondin.fin);
-  document.getElementById('resumenKpis').innerHTML = `
-    <div class="kpi"><div class="kpi-accentbar"></div><div class="label">Duración</div><div class="value">${durMin} min</div><div class="sub">${fmtTime(rondin.fin-rondin.inicio)}</div></div>
-    <div class="kpi"><div class="kpi-accentbar"></div><div class="label">Distancia</div><div class="value">${distKm.toFixed(2)} km</div><div class="sub">${rondin.ruta.length} puntos GPS registrados</div></div>
-    <div class="kpi semaforo"><div class="kpi-accentbar"></div><div class="label">Puntos de control</div><div class="value"><span class="dot ${totalCp===0?'':(marcados===totalCp?'VERDE':(marcados>0?'AMARILLO':'ROJO'))}"></span>${marcados}/${totalCp}</div><div class="sub">completados</div></div>
-    <div class="kpi"><div class="kpi-accentbar"></div><div class="label">Paradas libres</div><div class="value">${rondin.paradasLibres.length}</div><div class="sub">registradas</div></div>
-    <div class="kpi"><div class="kpi-accentbar" style="background:var(--rojo);"></div><div class="label">Novedades encontradas</div><div class="value" style="color:${numNovedades>0?'var(--rojo)':'inherit'};">${numNovedades}</div><div class="sub">${numNovedades>0?'todas con acción registrada':'ninguna reportada'}</div></div>
-  `;
-
-  drawRouteCanvas(rondin);
-
-  const filas = [];
-  rondin.checkpoints.forEach(c=>{
-    filas.push({tipo: c.marcado?('Punto de control'+(c.viaQR?' · confirmado por QR':'')):'Punto NO visitado', nombre:c.nombre, ts:c.ts, foto:c.foto, nota:c.nota, marcado:c.marcado});
-  });
-  rondin.paradasLibres.forEach(p=>{
-    filas.push({tipo:'Parada libre', nombre:p.descripcion, ts:p.ts, foto:p.foto, nota:p.nota, marcado:true});
-  });
-  rondin.novedades.forEach(n=>{
-    filas.push({tipo:'🔍 Novedad — acción: '+n.accion, nombre:n.descripcion, ts:n.ts, foto:n.foto, nota:n.nota, marcado:true});
-  });
-  document.getElementById('resumenDetalle').innerHTML = filas.map(f=>`
-    <div class="free-stop-item" style="margin-bottom:10px;${f.marcado?'':'opacity:.55;'}">
-      ${f.foto ? `<img class="thumb" src="${f.foto}">` : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:var(--muted-dim);font-size:18px;">${f.marcado?'📍':'⚠️'}</div>`}
-      <div class="body">
-        <div class="desc">${f.nombre} <span style="color:var(--muted);font-weight:400;font-size:11.5px;">— ${f.tipo}</span></div>
-        <div class="meta">${f.ts ? fmtDateTime(f.ts) : 'sin registrar'}${f.nota?' · '+f.nota:''}</div>
-      </div>
-    </div>
-  `).join('');
-
-  await dbSaveRondin(rondin);
-  renderHistorial();
-}
-
-function drawRouteCanvas(rondin){
-  const canvas = document.getElementById('routeCanvas');
-  const parent = canvas.parentElement;
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = parent.clientWidth, cssH = parent.clientHeight;
-  canvas.width = cssW*dpr; canvas.height = cssH*dpr;
-  canvas.style.width = cssW+'px'; canvas.style.height = cssH+'px';
-  const ctx = canvas.getContext('2d');
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.clearRect(0,0,cssW,cssH);
-
-  const pts = rondin.ruta.filter(p=>p.lat!=null);
-  if(pts.length<2){
-    ctx.fillStyle = COLORS.muted; ctx.font='13px Inter, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('No hay suficientes puntos GPS para dibujar la ruta.', cssW/2, cssH/2);
-    return;
-  }
-  const pad = 30;
-  const lats = pts.map(p=>p.lat), lngs = pts.map(p=>p.lng);
-  const minLat=Math.min(...lats), maxLat=Math.max(...lats), minLng=Math.min(...lngs), maxLng=Math.max(...lngs);
-  const spanLat = Math.max(0.00005, maxLat-minLat), spanLng = Math.max(0.00005, maxLng-minLng);
-  function toXY(p){
-    const x = pad + ((p.lng-minLng)/spanLng) * (cssW-pad*2);
-    const y = (cssH-pad) - ((p.lat-minLat)/spanLat) * (cssH-pad*2);
-    return [x,y];
-  }
-  ctx.strokeStyle = 'rgba(79,143,214,.55)';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  pts.forEach((p,i)=>{ const [x,y]=toXY(p); if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
-  ctx.stroke();
-
-  function dot(p, color, r){
-    const [x,y] = toXY(p);
-    ctx.beginPath(); ctx.arc(x,y,r||5,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth=1; ctx.stroke();
-  }
-  rondin.ruta.filter(p=>p.tipo==='checkpoint' && p.lat!=null).forEach(p=>dot(p, COLORS.VERDE, 5));
-  rondin.ruta.filter(p=>p.tipo==='parada' && p.lat!=null).forEach(p=>dot(p, COLORS.AMARILLO, 5));
-  rondin.ruta.filter(p=>p.tipo==='novedad' && p.lat!=null).forEach(p=>dot(p, '#e0459b', 6));
-  dot(pts[0], COLORS.accent, 7);
-  dot(pts[pts.length-1], COLORS.ROJO, 7);
-}
-
-document.getElementById('btnExportarRondin').addEventListener('click', function(){
-  exportRondinJSON(rondinActivo);
-});
-function exportRondinJSON(rondin){
-  const blob = new Blob([JSON.stringify(rondin, null, 2)], {type:'application/json'});
+// ---------- exportar todos los accesos ----------
+document.getElementById('btnExportarTodo').addEventListener('click', function(){
+  const blob = new Blob([JSON.stringify(ALL_ACCESOS, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const fecha = new Date(rondin.inicio).toISOString().slice(0,10);
-  a.href = url; a.download = 'rondin_'+rondin.guardia.replace(/\\s+/g,'_')+'_'+fecha+'.json';
+  const fecha = new Date().toISOString().slice(0,10);
+  a.href = url; a.download = 'control_acceso_'+fecha+'.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
-}
-
-document.getElementById('btnNuevoRondin').addEventListener('click', function(){
-  rondinActivo = null;
-  showScreen('setup');
 });
 
-// ---------- historial ----------
-async function renderHistorial(){
-  const cont = document.getElementById('historialList');
-  const rondines = (await dbGetAllRondines()).sort((a,b)=>b.inicio-a.inicio);
-  if(rondines.length===0){
-    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;">Aún no hay rondines guardados en este teléfono.</div>';
-    return;
-  }
-  cont.innerHTML = rondines.map(r=>{
-    const durMin = r.fin ? Math.round((r.fin-r.inicio)/60000) : 0;
-    const dist = routeDistanceKm(r.ruta||[]);
-    const marcados = (r.checkpoints||[]).filter(c=>c.marcado).length;
-    const totalCp = (r.checkpoints||[]).length;
-    const numNov = (r.novedades||[]).length;
-    return `<div class="history-item">
-      <div>
-        <div class="h-main">${r.guardia} · ${r.area}${numNov>0?' · <span style="color:var(--rojo);">🔍 '+numNov+' novedad'+(numNov===1?'':'es')+'</span>':''}</div>
-        <div class="h-sub">${fmtDateTime(r.inicio)} · ${durMin} min · ${dist.toFixed(2)} km · ${marcados}/${totalCp} puntos · ${(r.paradasLibres||[]).length} paradas</div>
-      </div>
-      <div class="h-actions">
-        <button type="button" class="edit-btn btn-export-hist" data-id="${r.id}">⬇ Exportar</button>
-        <button type="button" class="del-btn btn-del-hist" data-id="${r.id}">✕</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-document.getElementById('historialList').addEventListener('click', async function(e){
-  const expBtn = e.target.closest('.btn-export-hist');
-  if(expBtn){
-    const rondines = await dbGetAllRondines();
-    const r = rondines.find(x=>x.id===expBtn.getAttribute('data-id'));
-    if(r) exportRondinJSON(r);
-    return;
-  }
-  const delBtn = e.target.closest('.btn-del-hist');
-  if(delBtn){
-    if(!confirm('¿Eliminar este rondín del historial de este teléfono? Esta acción no se puede deshacer.')) return;
-    await dbDeleteRondin(delBtn.getAttribute('data-id'));
-    renderHistorial();
-  }
-});
-
-renderHistorial();
+cargarYRenderizar();
 
 // ---------- registrar Service Worker (permite abrir la app sin conexión a internet) ----------
 if("serviceWorker" in navigator){
