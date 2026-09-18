@@ -506,8 +506,26 @@ footer.note b{color:var(--muted);}
           </select>
         </div>
         <div class="field-inline">
+          <label>Empresa de procedencia (si aplica)</label>
+          <input type="text" id="inEmpresa" placeholder="Ej. Transportes del Norte S.A.">
+        </div>
+        <div class="field-inline">
+          <label class="req">Motivo de la visita</label>
+          <select id="inMotivoVisita" required>
+            <option value="">— Seleccionar —</option>
+            <option value="Entrega de material">Entrega de material</option>
+            <option value="Mantenimiento">Mantenimiento</option>
+            <option value="Reunión">Reunión</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="field-inline">
           <label class="req">Área y/o persona a la que visita</label>
           <input type="text" id="inAreaVisita" placeholder="Ej. Oficina RH — Lic. Pérez" required>
+        </div>
+        <div class="field-inline">
+          <label>N° de acompañantes (si no llega solo)</label>
+          <input type="number" id="inAcompanantes" min="0" step="1" value="0">
         </div>
         <div class="field-inline">
           <label>Placas de vehículo (si aplica)</label>
@@ -649,14 +667,15 @@ function renderKpis(){
   const hoy = new Date(); hoy.setHours(0,0,0,0);
   const hoyTs = hoy.getTime();
   const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida);
+  const excedidos = dentro.filter(a=>estaExcedido(a));
   const hoyRegistros = ALL_ACCESOS.filter(a=>a.horaIngreso>=hoyTs);
   const duracionesHoy = hoyRegistros.filter(a=>a.horaSalida).map(a=>(a.horaSalida-a.horaIngreso)/60000);
 
   document.getElementById('kpisRow').innerHTML = `
     <div class="kpi semaforo"><div class="kpi-accentbar"></div>
       <div class="label">Actualmente dentro</div>
-      <div class="value"><span class="dot ${dentro.length>0?'AMARILLO':'VERDE'}"></span>${dentro.length}</div>
-      <div class="sub">en esta caseta</div>
+      <div class="value"><span class="dot ${excedidos.length>0?'ROJO':(dentro.length>0?'AMARILLO':'VERDE')}"></span>${dentro.length}</div>
+      <div class="sub">${excedidos.length>0 ? ('⏰ '+excedidos.length+' con tiempo excedido (>'+UMBRAL_HORAS_EXCEDIDO+'h)') : 'en esta caseta'}</div>
     </div>
     <div class="kpi"><div class="kpi-accentbar"></div>
       <div class="label">Registros de hoy</div>
@@ -677,6 +696,9 @@ function renderKpis(){
 }
 
 // ---------- lista de "actualmente dentro" ----------
+const UMBRAL_HORAS_EXCEDIDO = 4; // horas dentro sin salida a partir de las cuales se marca como excedido
+function estaExcedido(a){ return !a.horaSalida && (Date.now()-a.horaIngreso) > UMBRAL_HORAS_EXCEDIDO*3600000; }
+
 function renderDentroList(){
   const cont = document.getElementById('dentroList');
   const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida).sort((a,b)=>b.horaIngreso-a.horaIngreso);
@@ -684,13 +706,17 @@ function renderDentroList(){
     cont.innerHTML = '<div style="color:var(--muted);font-size:13px;">No hay nadie registrado como "dentro" en este momento.</div>';
     return;
   }
-  cont.innerHTML = dentro.map(a=>`
-    <div class="visitante-card">
+  cont.innerHTML = dentro.map(a=>{
+    const excedido = estaExcedido(a);
+    return `
+    <div class="visitante-card" style="${excedido?'border-left-color:var(--rojo);background:var(--rojo-soft);':''}">
       ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
       <div class="v-body">
-        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span></div>
+        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ TIEMPO EXCEDIDO</span>':''}</div>
         <div class="v-meta">
-          Entró ${fmtHora(a.horaIngreso)} (${fmtDuracion(a.horaIngreso, null)}) · Visita: ${a.areaVisita}
+          Entró ${fmtHora(a.horaIngreso)} (${fmtDuracion(a.horaIngreso, null)}) · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}
+          ${a.empresaProcedencia ? ' · '+a.empresaProcedencia : ''}
+          ${a.numAcompanantes>0 ? ' · <span class="gafete-pill">👥 +'+a.numAcompanantes+'</span>' : ''}
           ${a.placas ? ' · <span class="gafete-pill">🚗 '+a.placas+'</span>' : ''}
           ${a.gafeteNum ? ' · <span class="gafete-pill">🪪 #'+a.gafeteNum+'</span>' : ''}
         </div>
@@ -699,7 +725,8 @@ function renderDentroList(){
         <button type="button" class="btn-salida" data-id="${a.id}">Registrar salida</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 document.getElementById('dentroList').addEventListener('click', async function(e){
   const btn = e.target.closest('.btn-salida');
@@ -721,18 +748,20 @@ function renderHistorial(){
     lista = lista.filter(a=>
       (a.nombre||'').toLowerCase().includes(q) ||
       (a.placas||'').toLowerCase().includes(q) ||
-      (a.gafeteNum||'').toLowerCase().includes(q)
+      (a.gafeteNum||'').toLowerCase().includes(q) ||
+      (a.empresaProcedencia||'').toLowerCase().includes(q)
     );
   }
   document.getElementById('historialCount').textContent = lista.length + (lista.length===1?' registro':' registros');
   document.getElementById('historialList').innerHTML = lista.map(a=>{
     const estado = a.horaSalida ? 'SALIO' : 'DENTRO';
+    const excedido = estaExcedido(a);
     return `<div class="history-item">
       <div style="display:flex;gap:12px;align-items:center;">
         ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
         <div>
-          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span></div>
-          <div class="h-sub">${a.campo} · ${a.tipoPersona} · Visita: ${a.areaVisita}</div>
+          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
+          <div class="h-sub">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acompañante'+(a.numAcompanantes===1?'':'s')):''}</div>
           <div class="h-sub">Ingreso: ${fmtDateTime(a.horaIngreso)} ${a.horaSalida ? ('· Salida: '+fmtDateTime(a.horaSalida)+' · '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ''}</div>
         </div>
       </div>
@@ -812,9 +841,10 @@ document.getElementById('formIngreso').addEventListener('submit', async function
   const msgEl = document.getElementById('formIngresoMsg');
   const nombre = document.getElementById('inNombre').value.trim();
   const tipoPersona = document.getElementById('inTipoPersona').value;
+  const motivoVisita = document.getElementById('inMotivoVisita').value;
   const areaVisita = document.getElementById('inAreaVisita').value.trim();
-  if(!nombre || !tipoPersona || !areaVisita){
-    msgEl.textContent = 'Complete nombre, tipo, y a quién/qué área visita antes de registrar.';
+  if(!nombre || !tipoPersona || !motivoVisita || !areaVisita){
+    msgEl.textContent = 'Complete nombre, tipo, motivo de la visita, y a quién/qué área visita antes de registrar.';
     msgEl.className = 'form-msg err';
     return;
   }
@@ -822,7 +852,9 @@ document.getElementById('formIngreso').addEventListener('submit', async function
     id: nextId('acceso'),
     campo: document.getElementById('inCampo').value.trim(),
     guardiaConfirma: document.getElementById('inGuardiaConfirma').value.trim(),
-    nombre, tipoPersona, areaVisita,
+    nombre, tipoPersona, motivoVisita, areaVisita,
+    empresaProcedencia: document.getElementById('inEmpresa').value.trim(),
+    numAcompanantes: parseInt(document.getElementById('inAcompanantes').value,10) || 0,
     placas: document.getElementById('inPlacas').value.trim(),
     gafeteNum: document.getElementById('inGafete').value.trim(),
     tipoID: document.getElementById('inTipoID').value,
@@ -851,6 +883,9 @@ document.getElementById('btnExportarTodo').addEventListener('click', function(){
 });
 
 cargarYRenderizar();
+
+// refresca cada minuto para que la alerta de "tiempo excedido" se actualice sola
+setInterval(function(){ renderKpis(); renderDentroList(); }, 60000);
 
 // ---------- registrar Service Worker (permite abrir la app sin conexión a internet) ----------
 if("serviceWorker" in navigator){

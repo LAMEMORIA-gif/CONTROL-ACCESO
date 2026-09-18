@@ -442,12 +442,17 @@ footer.note b{color:var(--muted);}
       <select id="fEstado">
         <option value="TODOS">Todos</option>
         <option value="DENTRO">Actualmente dentro</option>
+        <option value="EXCEDIDO">⏰ Tiempo excedido</option>
         <option value="SALIO">Ya salieron</option>
       </select>
     </div>
     <div class="field">
       <label for="fTipo">Tipo</label>
       <select id="fTipo"><option value="TODOS">Todos los tipos</option></select>
+    </div>
+    <div class="field">
+      <label for="fMotivo">Motivo de visita</label>
+      <select id="fMotivo"><option value="TODOS">Todos los motivos</option></select>
     </div>
     <button class="btn-reset" id="btnReset">Restablecer filtros</button>
   </div>
@@ -465,6 +470,12 @@ footer.note b{color:var(--muted);}
       <div class="desc">Dentro del filtro activo</div>
       <div class="chart-box tall"><canvas id="chartTipo"></canvas></div>
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:22px;">
+    <h2>Motivos de visita más frecuentes</h2>
+    <div class="desc">Dentro del filtro activo</div>
+    <div class="chart-box tall"><canvas id="chartMotivo"></canvas></div>
   </div>
 
   <div class="section-title" style="margin-top:22px;">
@@ -620,6 +631,8 @@ function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
 function avg(arr){ return arr.length ? sum(arr)/arr.length : 0; }
 function fmtPct(v){ return (Math.round(v*1000)/10).toFixed(1)+'%'; }
 function estadoDe(a){ return a.horaSalida ? 'SALIO' : 'DENTRO'; }
+const UMBRAL_HORAS_EXCEDIDO = 4; // horas dentro sin salida a partir de las cuales se marca como excedido
+function estaExcedido(a){ return !a.horaSalida && (Date.now()-a.horaIngreso) > UMBRAL_HORAS_EXCEDIDO*3600000; }
 
 // ---------- IndexedDB: almacena los accesos importados ----------
 const DB_NAME = 'control_acceso_panel_db';
@@ -709,6 +722,7 @@ function fillSelect(id, values, allLabel){
 function refreshFilterLists(){
   fillSelect('fCampo', Array.from(new Set(ALL_ACCESOS.map(a=>a.campo))).sort(), 'Todos los campos');
   fillSelect('fTipo', Array.from(new Set(ALL_ACCESOS.map(a=>a.tipoPersona))).sort(), 'Todos los tipos');
+  fillSelect('fMotivo', Array.from(new Set(ALL_ACCESOS.map(a=>a.motivoVisita).filter(Boolean))).sort(), 'Todos los motivos');
   document.getElementById('totalLabel').textContent = ALL_ACCESOS.length;
   document.getElementById('totalCamposLabel').textContent = new Set(ALL_ACCESOS.map(a=>a.campo)).size;
 }
@@ -716,10 +730,13 @@ function applyFilters(){
   const campo = document.getElementById('fCampo').value;
   const estado = document.getElementById('fEstado').value;
   const tipo = document.getElementById('fTipo').value;
+  const motivo = document.getElementById('fMotivo').value;
   return ALL_ACCESOS.filter(a=>{
     if(campo!=='TODOS' && a.campo!==campo) return false;
-    if(estado!=='TODOS' && estadoDe(a)!==estado) return false;
+    if(estado==='EXCEDIDO'){ if(!estaExcedido(a)) return false; }
+    else if(estado!=='TODOS' && estadoDe(a)!==estado) return false;
     if(tipo!=='TODOS' && a.tipoPersona!==tipo) return false;
+    if(motivo!=='TODOS' && a.motivoVisita!==motivo) return false;
     return true;
   });
 }
@@ -727,11 +744,13 @@ function applyFilters(){
 // ---------- KPIs ----------
 function renderKpis(records){
   const dentro = records.filter(a=>!a.horaSalida);
+  const excedidos = dentro.filter(a=>estaExcedido(a));
   const salieron = records.filter(a=>a.horaSalida);
   const duraciones = salieron.map(a=>(a.horaSalida-a.horaIngreso)/60000);
   document.getElementById('kpisRow').innerHTML = `
     <div class="kpi"><div class="kpi-accentbar"></div><div class="label">Registros (filtro)</div><div class="value">${records.length}</div><div class="sub">${new Set(records.map(a=>a.campo)).size} campo(s)</div></div>
     <div class="kpi semaforo"><div class="kpi-accentbar"></div><div class="label">Actualmente dentro</div><div class="value"><span class="dot ${dentro.length>0?'AMARILLO':'VERDE'}"></span>${dentro.length}</div><div class="sub">en el filtro activo</div></div>
+    <div class="kpi semaforo"><div class="kpi-accentbar"></div><div class="label">⏰ Tiempo excedido</div><div class="value"><span class="dot ${excedidos.length>0?'ROJO':'VERDE'}"></span>${excedidos.length}</div><div class="sub">más de ${UMBRAL_HORAS_EXCEDIDO}h dentro sin salida</div></div>
     <div class="kpi"><div class="kpi-accentbar"></div><div class="label">Duración promedio</div><div class="value">${duraciones.length?Math.round(avg(duraciones))+' min':'—'}</div><div class="sub">visitas ya finalizadas</div></div>
     <div class="kpi"><div class="kpi-accentbar"></div><div class="label">Con foto de identificación</div><div class="value">${fmtPct(records.length?records.filter(a=>a.fotoID).length/records.length:0)}</div><div class="sub">${records.filter(a=>a.fotoID).length} de ${records.length}</div></div>
   `;
@@ -756,6 +775,15 @@ function renderChartTipo(records){
     colors: entries.map(()=>COLORS.NARANJA), xTitle:'registros de acceso', valueFmt:v=>String(v)
   });
 }
+function renderChartMotivo(records){
+  const map = {};
+  records.forEach(a=>{ const m = a.motivoVisita||'Sin especificar'; map[m] = (map[m]||0)+1; });
+  const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  drawHBarChart(document.getElementById('chartMotivo'), {
+    labels: entries.map(e=>e[0]), values: entries.map(e=>e[1]),
+    colors: entries.map(()=>COLORS.accent), xTitle:'registros de acceso', valueFmt:v=>String(v)
+  });
+}
 
 // ---------- lista de accesos ----------
 function renderAccesosList(records){
@@ -766,7 +794,8 @@ function renderAccesosList(records){
       (a.nombre||'').toLowerCase().includes(q) ||
       (a.placas||'').toLowerCase().includes(q) ||
       (a.gafeteNum||'').toLowerCase().includes(q) ||
-      (a.areaVisita||'').toLowerCase().includes(q)
+      (a.areaVisita||'').toLowerCase().includes(q) ||
+      (a.empresaProcedencia||'').toLowerCase().includes(q)
     );
   }
   document.getElementById('tblCount').textContent = lista.length + (lista.length===1?' registro':' registros');
@@ -777,11 +806,12 @@ function renderAccesosList(records){
   }
   cont.innerHTML = lista.map(a=>{
     const estado = estadoDe(a);
-    return `<div class="acceso-card ${estado}" data-id="${a.id}">
+    const excedido = estaExcedido(a);
+    return `<div class="acceso-card ${excedido?'SALIO':estado}" data-id="${a.id}" style="${excedido?'border-left-color:var(--rojo);':''}">
       ${a.fotoID ? `<img class="ac-thumb" src="${a.fotoID}">` : `<div class="ac-thumb-empty">👤</div>`}
       <div class="ac-body">
-        <div class="ac-name">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span></div>
-        <div class="ac-meta">${a.campo} · ${a.tipoPersona} · Visita: ${a.areaVisita}</div>
+        <div class="ac-name">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
+        <div class="ac-meta">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acomp.'):''}</div>
         <div class="ac-meta">Ingreso: ${fmtDateTime(a.horaIngreso)}${a.horaSalida ? (' · Salida: '+fmtDateTime(a.horaSalida)+' · '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ''}</div>
       </div>
     </div>`;
@@ -803,11 +833,15 @@ function abrirDetalle(id){
   if(!a) return;
   accesoDetalleActual = a;
   const estado = estadoDe(a);
+  const excedido = estaExcedido(a);
   document.getElementById('detNombre').textContent = a.nombre;
   document.getElementById('detSub').textContent = a.campo+' · '+a.tipoPersona;
   document.getElementById('detBody').innerHTML = `
-    <div class="field-inline"><label>Estado</label><span class="status-pill ${estado}" style="width:fit-content;">${estado==='DENTRO'?'ACTUALMENTE DENTRO':'YA SALIÓ'}</span></div>
+    <div class="field-inline"><label>Estado</label><span class="status-pill ${estado}" style="width:fit-content;">${estado==='DENTRO'?'ACTUALMENTE DENTRO':'YA SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);width:fit-content;">⏰ TIEMPO EXCEDIDO (>'+UMBRAL_HORAS_EXCEDIDO+'h)</span>':''}</div>
+    ${a.empresaProcedencia ? `<div class="field-inline"><label>Empresa de procedencia</label><div>${a.empresaProcedencia}</div></div>` : ''}
+    <div class="field-inline"><label>Motivo de la visita</label><div>${a.motivoVisita||'—'}</div></div>
     <div class="field-inline"><label>Área / persona que visita</label><div>${a.areaVisita}</div></div>
+    ${a.numAcompanantes>0 ? `<div class="field-inline"><label>N° de acompañantes</label><div>${a.numAcompanantes}</div></div>` : ''}
     <div class="field-inline"><label>Hora de ingreso</label><div class="mono">${fmtDateTime(a.horaIngreso)}</div></div>
     <div class="field-inline"><label>Hora de salida</label><div class="mono">${a.horaSalida ? fmtDateTime(a.horaSalida)+' ('+fmtDuracion(a.horaIngreso,a.horaSalida)+')' : '— aún dentro —'}</div></div>
     ${a.placas ? `<div class="field-inline"><label>Placas de vehículo</label><div class="mono">${a.placas}</div></div>` : ''}
@@ -843,6 +877,7 @@ function renderAll(){
   safe(()=>renderKpis(records), 'KPIs');
   safe(()=>renderChartCampo(records), 'gráfico por campo');
   safe(()=>renderChartTipo(records), 'gráfico por tipo');
+  safe(()=>renderChartMotivo(records), 'gráfico por motivo');
   safe(()=>renderAccesosList(records), 'lista de accesos');
 }
 async function cargarYRenderizar(){
@@ -851,16 +886,20 @@ async function cargarYRenderizar(){
   renderAll();
 }
 
-['fCampo','fEstado','fTipo'].forEach(id=>{ document.getElementById(id).addEventListener('change', renderAll); });
+['fCampo','fEstado','fTipo','fMotivo'].forEach(id=>{ document.getElementById(id).addEventListener('change', renderAll); });
 document.getElementById('btnReset').addEventListener('click', function(){
   document.getElementById('fCampo').value = 'TODOS';
   document.getElementById('fEstado').value = 'TODOS';
   document.getElementById('fTipo').value = 'TODOS';
+  document.getElementById('fMotivo').value = 'TODOS';
   document.getElementById('tblSearch').value = '';
   renderAll();
 });
 
 cargarYRenderizar();
+
+// refresca cada minuto para que la alerta de "tiempo excedido" se actualice sola
+setInterval(function(){ renderAll(); }, 60000);
 
 window.addEventListener('resize', function(){
   clearTimeout(window._rrt);
