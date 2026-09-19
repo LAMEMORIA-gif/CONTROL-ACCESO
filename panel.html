@@ -457,6 +457,10 @@ footer.note b{color:var(--muted);}
     <button class="btn-reset" id="btnReset">Restablecer filtros</button>
   </div>
 
+  <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+    <button type="button" class="btn-primary" id="btnReporteEjecutivo">📄 Generar reporte ejecutivo (PDF)</button>
+  </div>
+
   <div class="kpis" id="kpisRow"></div>
 
   <div class="grid2">
@@ -894,6 +898,120 @@ document.getElementById('btnReset').addEventListener('click', function(){
   document.getElementById('fMotivo').value = 'TODOS';
   document.getElementById('tblSearch').value = '';
   renderAll();
+});
+
+// ---------- reporte ejecutivo imprimible ----------
+function fmtDateOnly(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'});
+}
+document.getElementById('btnReporteEjecutivo').addEventListener('click', function(){
+  const records = applyFilters();
+  if(records.length===0){ alert('No hay registros en el filtro activo para incluir en el reporte.'); return; }
+
+  const fechas = records.map(a=>a.horaIngreso).sort((a,b)=>a-b);
+  const periodoTxt = fechas.length ? (fmtDateOnly(fechas[0])+' — '+fmtDateOnly(fechas[fechas.length-1])) : '—';
+  const filtrosActivos = [];
+  const fC = document.getElementById('fCampo').value; if(fC!=='TODOS') filtrosActivos.push('Campo: '+fC);
+  const fE = document.getElementById('fEstado').value; if(fE!=='TODOS') filtrosActivos.push('Estado: '+fE);
+  const fT = document.getElementById('fTipo').value; if(fT!=='TODOS') filtrosActivos.push('Tipo: '+fT);
+  const fM = document.getElementById('fMotivo').value; if(fM!=='TODOS') filtrosActivos.push('Motivo: '+fM);
+
+  const dentro = records.filter(a=>!a.horaSalida);
+  const excedidos = dentro.filter(a=>estaExcedido(a));
+  const salieron = records.filter(a=>a.horaSalida);
+  const duraciones = salieron.map(a=>(a.horaSalida-a.horaIngreso)/60000);
+  const duracionProm = duraciones.length ? avg(duraciones) : null;
+  const conFoto = records.filter(a=>a.fotoID).length;
+  const totalAcompanantes = sum(records.map(a=>a.numAcompanantes||0));
+
+  const porCampo = {};
+  records.forEach(a=>{
+    if(!porCampo[a.campo]) porCampo[a.campo] = {count:0, excedidos:0, dentro:0};
+    porCampo[a.campo].count++;
+    if(!a.horaSalida) porCampo[a.campo].dentro++;
+    if(estaExcedido(a)) porCampo[a.campo].excedidos++;
+  });
+  const tipos = {};
+  records.forEach(a=>{ tipos[a.tipoPersona] = (tipos[a.tipoPersona]||0)+1; });
+  const motivos = {};
+  records.forEach(a=>{ const m=a.motivoVisita||'Sin especificar'; motivos[m]=(motivos[m]||0)+1; });
+
+  const filas_campo = Object.entries(porCampo).map(([campo,p])=>`
+    <tr><td>${campo}</td><td>${p.count}</td><td>${p.dentro}</td><td>${p.excedidos>0?'<span class="alerta">'+p.excedidos+'</span>':'0'}</td></tr>`).join('');
+  const filas_tipo = Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<tr><td>${t}</td><td>${n}</td></tr>`).join('');
+  const filas_motivo = Object.entries(motivos).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`<tr><td>${m}</td><td>${n}</td></tr>`).join('');
+  const filas_excedidos = excedidos.slice(0,20).map(a=>`
+    <tr><td>${a.nombre}</td><td>${a.campo}</td><td>${a.tipoPersona}</td><td>${fmtDateTime(a.horaIngreso)}</td><td class="alerta">${fmtDuracion(a.horaIngreso,null)}</td></tr>`).join('');
+
+  const reportHtml = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Reporte Ejecutivo · Control de Acceso</title>
+<style>
+  * { box-sizing:border-box; }
+  body{ font-family:'Segoe UI', Arial, sans-serif; color:#1a2230; margin:0; padding:36px 44px; background:#fff; }
+  h1{ font-size:22px; margin:0 0 4px; color:#0f2e33; }
+  .sub{ color:#5b6b7f; font-size:13px; margin-bottom:22px; }
+  .meta{ display:flex; gap:28px; flex-wrap:wrap; font-size:12.5px; color:#3a4656; margin-bottom:22px; padding-bottom:14px; border-bottom:2px solid #0f2e33; }
+  .meta b{ display:block; color:#0f2e33; font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:2px; }
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:26px; }
+  .kpi{ border:1px solid #dde3ea; border-radius:8px; padding:12px 14px; }
+  .kpi .l{ font-size:10.5px; color:#6b7686; text-transform:uppercase; letter-spacing:.03em; }
+  .kpi .v{ font-size:22px; font-weight:700; color:#0f2e33; margin-top:3px; }
+  h2{ font-size:14.5px; color:#0f2e33; margin:26px 0 10px; padding-top:6px; border-top:1px solid #e5e9ee; }
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  th{ text-align:left; background:#f3f5f8; color:#3a4656; font-weight:600; padding:7px 10px; border-bottom:2px solid #dde3ea; }
+  td{ padding:6px 10px; border-bottom:1px solid #eef1f4; color:#232d3b; }
+  tr:nth-child(even) td{ background:#fafbfc; }
+  .alerta{ color:#b3261e; font-weight:600; }
+  .ok{ color:#1e7e34; font-weight:600; }
+  footer{ margin-top:32px; padding-top:12px; border-top:1px solid #e5e9ee; font-size:10.5px; color:#8b95a6; display:flex; justify-content:space-between; }
+  @media print{ body{ padding:18px 26px; } }
+</style></head>
+<body>
+  <h1>🪪 Reporte Ejecutivo — Control de Acceso</h1>
+  <div class="sub">Generado el ${new Date().toLocaleString('es-MX',{dateStyle:'long',timeStyle:'short'})}</div>
+  <div class="meta">
+    <div><b>Periodo cubierto</b>${periodoTxt}</div>
+    <div><b>Registros incluidos</b>${records.length}</div>
+    <div><b>Campos distintos</b>${new Set(records.map(a=>a.campo)).size}</div>
+    ${filtrosActivos.length ? `<div><b>Filtros aplicados</b>${filtrosActivos.join(' · ')}</div>` : ''}
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">Registros totales</div><div class="v">${records.length}</div></div>
+    <div class="kpi"><div class="l">Actualmente dentro</div><div class="v">${dentro.length}</div></div>
+    <div class="kpi"><div class="l">Tiempo excedido (&gt;${UMBRAL_HORAS_EXCEDIDO}h)</div><div class="v ${excedidos.length>0?'alerta':'ok'}">${excedidos.length}</div></div>
+    <div class="kpi"><div class="l">Duración promedio</div><div class="v">${duracionProm==null?'—':Math.round(duracionProm)+' min'}</div></div>
+    <div class="kpi"><div class="l">Con foto de identificación</div><div class="v">${fmtPct(records.length?conFoto/records.length:0)}</div></div>
+    <div class="kpi"><div class="l">Acompañantes registrados</div><div class="v">${totalAcompanantes}</div></div>
+  </div>
+
+  <h2>Resumen por campo</h2>
+  <table><thead><tr><th>Campo</th><th>Registros</th><th>Actualmente dentro</th><th>Tiempo excedido</th></tr></thead>
+  <tbody>${filas_campo}</tbody></table>
+
+  <h2>Tipos de visitante</h2>
+  <table><thead><tr><th>Tipo</th><th>Cantidad</th></tr></thead><tbody>${filas_tipo}</tbody></table>
+
+  <h2>Motivos de visita</h2>
+  <table><thead><tr><th>Motivo</th><th>Cantidad</th></tr></thead><tbody>${filas_motivo}</tbody></table>
+
+  ${excedidos.length ? `<h2>Visitantes con tiempo excedido (máx. 20)</h2>
+  <table><thead><tr><th>Nombre</th><th>Campo</th><th>Tipo</th><th>Ingreso</th><th>Tiempo dentro</th></tr></thead>
+  <tbody>${filas_excedidos}</tbody></table>` : ''}
+
+  <footer>
+    <span>Reporte generado automáticamente por el sistema de Control de Acceso — datos capturados en campo, sin conexión a internet.</span>
+    <span>Página 1</span>
+  </footer>
+
+  <script>window.onload = function(){ setTimeout(function(){ window.print(); }, 350); };</script>
+</body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){ alert('El navegador bloqueó la ventana del reporte. Permita ventanas emergentes para este sitio e intente de nuevo.'); return; }
+  w.document.write(reportHtml);
+  w.document.close();
 });
 
 cargarYRenderizar();
