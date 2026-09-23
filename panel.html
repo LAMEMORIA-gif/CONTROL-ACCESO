@@ -388,6 +388,7 @@ footer.note b{color:var(--muted);}
 .acceso-card .ac-body{flex:1;min-width:0;}
 .acceso-card .ac-name{font-weight:600;font-size:14px;}
 .acceso-card .ac-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+tr.acceso-row:hover td{background:var(--panel-alt);}
 .status-pill{font-size:11px;padding:3px 9px;border-radius:12px;white-space:nowrap;font-weight:600;}
 .status-pill.DENTRO{color:var(--verde);background:var(--verde-soft);}
 .status-pill.SALIO{color:var(--muted);background:rgba(139,149,166,.14);}
@@ -490,7 +491,12 @@ footer.note b{color:var(--muted);}
     <input type="text" id="tblSearch" placeholder="Buscar por nombre, placas, gafete o a quién visita…">
     <span class="table-count" id="tblCount">0 registros</span>
   </div>
-  <div id="accesosList"></div>
+  <div class="tbl-scroll">
+    <table>
+      <thead><tr><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Permanencia</th><th>Nombre</th><th>Tipo</th><th>Empresa</th><th>Campo</th><th>Motivo</th><th>Estado</th></tr></thead>
+      <tbody id="accesosList"></tbody>
+    </table>
+  </div>
 
   <div class="modal-overlay" id="modalDetalle">
     <div class="modal-box" style="max-width:460px;">
@@ -623,6 +629,14 @@ function fmtDateTime(ts){
   if(!ts) return '—';
   const d = new Date(ts);
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short',year:'numeric'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+}
+function fmtFecha(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function fmtHora(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
 }
 function fmtDuracion(ini,fin){
   if(!ini) return '—';
@@ -805,25 +819,29 @@ function renderAccesosList(records){
   document.getElementById('tblCount').textContent = lista.length + (lista.length===1?' registro':' registros');
   const cont = document.getElementById('accesosList');
   if(lista.length===0){
-    cont.innerHTML = '<div style="color:var(--muted);font-size:13px;">No hay registros para el filtro seleccionado — importe archivos JSON arriba.</div>';
+    cont.innerHTML = '<tr><td colspan="10" style="color:var(--muted);font-size:13px;">No hay registros para el filtro seleccionado — importe archivos JSON arriba.</td></tr>';
     return;
   }
   cont.innerHTML = lista.map(a=>{
     const estado = estadoDe(a);
     const excedido = estaExcedido(a);
-    return `<div class="acceso-card ${excedido?'SALIO':estado}" data-id="${a.id}" style="${excedido?'border-left-color:var(--rojo);':''}">
-      ${a.fotoID ? `<img class="ac-thumb" src="${a.fotoID}">` : `<div class="ac-thumb-empty">👤</div>`}
-      <div class="ac-body">
-        <div class="ac-name">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
-        <div class="ac-meta">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acomp.'):''}</div>
-        <div class="ac-meta">Ingreso: ${fmtDateTime(a.horaIngreso)}${a.horaSalida ? (' · Salida: '+fmtDateTime(a.horaSalida)+' · '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ''}</div>
-      </div>
-    </div>`;
+    return `<tr class="acceso-row" data-id="${a.id}" style="cursor:pointer;${excedido?'background:rgba(240,85,74,.08);':''}">
+      <td class="mono">${fmtFecha(a.horaIngreso)}</td>
+      <td class="mono">🕐 ${fmtHora(a.horaIngreso)}</td>
+      <td class="mono">${a.horaSalida ? '🕐 '+fmtHora(a.horaSalida) : '— dentro —'}</td>
+      <td>${a.horaSalida ? fmtDuracion(a.horaIngreso,a.horaSalida) : fmtDuracion(a.horaIngreso,null)}</td>
+      <td>${a.nombre}${a.fotoID?' 📷':''}</td>
+      <td>${a.tipoPersona}</td>
+      <td>${a.empresaProcedencia||'—'}</td>
+      <td>${a.campo}</td>
+      <td>${a.motivoVisita||'—'}</td>
+      <td><span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰</span>':''}</td>
+    </tr>`;
   }).join('');
 }
 document.getElementById('tblSearch').addEventListener('input', ()=>renderAccesosList(applyFilters()));
 document.getElementById('accesosList').addEventListener('click', function(e){
-  const card = e.target.closest('.acceso-card');
+  const card = e.target.closest('.acceso-row');
   if(!card) return;
   abrirDetalle(card.getAttribute('data-id'));
 });

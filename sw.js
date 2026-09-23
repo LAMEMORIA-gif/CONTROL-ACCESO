@@ -1,6 +1,6 @@
 // Service Worker de Rondines — permite que la app abra sin conexión a internet
 // después de haberla visitado al menos una vez con conexión.
-const CACHE_NAME = 'control-acceso-cache-v4';
+const CACHE_NAME = 'control-acceso-cache-v5';
 const ASSETS = [
   './',
   './index.html',

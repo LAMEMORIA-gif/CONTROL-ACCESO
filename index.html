@@ -575,6 +575,10 @@ function fmtDateTime(ts){
   const d = new Date(ts);
   return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
 }
+function fmtFecha(ts){
+  if(!ts) return '—';
+  return new Date(ts).toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
 function fmtHora(ts){
   if(!ts) return '—';
   return new Date(ts).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
@@ -714,7 +718,7 @@ function renderDentroList(){
       <div class="v-body">
         <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ TIEMPO EXCEDIDO</span>':''}</div>
         <div class="v-meta">
-          Entró ${fmtHora(a.horaIngreso)} (${fmtDuracion(a.horaIngreso, null)}) · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}
+          📅 ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)} (lleva ${fmtDuracion(a.horaIngreso, null)}) · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}
           ${a.empresaProcedencia ? ' · '+a.empresaProcedencia : ''}
           ${a.numAcompanantes>0 ? ' · <span class="gafete-pill">👥 +'+a.numAcompanantes+'</span>' : ''}
           ${a.placas ? ' · <span class="gafete-pill">🚗 '+a.placas+'</span>' : ''}
@@ -762,7 +766,7 @@ function renderHistorial(){
         <div>
           <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
           <div class="h-sub">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acompañante'+(a.numAcompanantes===1?'':'s')):''}</div>
-          <div class="h-sub">Ingreso: ${fmtDateTime(a.horaIngreso)} ${a.horaSalida ? ('· Salida: '+fmtDateTime(a.horaSalida)+' · '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ''}</div>
+          <div class="h-sub">📅 Fecha: ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)}${a.horaSalida ? (' · 🕐 Salida: '+fmtHora(a.horaSalida)+' · ⏱ Permanencia: '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ' · 🕐 Salida: — (aún dentro)'}</div>
         </div>
       </div>
       <div class="h-actions">
