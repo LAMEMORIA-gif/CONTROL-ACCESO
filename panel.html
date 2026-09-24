@@ -477,10 +477,17 @@ tr.acceso-row:hover td{background:var(--panel-alt);}
     </div>
   </div>
 
-  <div class="panel" style="margin-top:22px;">
-    <h2>Motivos de visita más frecuentes</h2>
-    <div class="desc">Dentro del filtro activo</div>
-    <div class="chart-box tall"><canvas id="chartMotivo"></canvas></div>
+  <div class="grid2" style="margin-top:22px;">
+    <div class="panel">
+      <h2>Motivos de visita más frecuentes</h2>
+      <div class="desc">Dentro del filtro activo</div>
+      <div class="chart-box tall"><canvas id="chartMotivo"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>Áreas más visitadas</h2>
+      <div class="desc">Top 12 · según "Área y/o persona a la que visita" en cada registro, dentro del filtro activo</div>
+      <div class="chart-box tall"><canvas id="chartAreaVisitada"></canvas></div>
+    </div>
   </div>
 
   <div class="section-title" style="margin-top:22px;">
@@ -803,6 +810,16 @@ function renderChartMotivo(records){
   });
 }
 
+function renderChartAreaVisitada(records){
+  const map = {};
+  records.forEach(a=>{ const ar = (a.areaVisita||'Sin especificar').trim(); map[ar] = (map[ar]||0)+1; });
+  const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  drawHBarChart(document.getElementById('chartAreaVisitada'), {
+    labels: entries.map(e=>e[0]), values: entries.map(e=>e[1]),
+    colors: entries.map(()=>COLORS.VERDE), xTitle:'visitas recibidas', valueFmt:v=>String(v)
+  });
+}
+
 // ---------- lista de accesos ----------
 function renderAccesosList(records){
   const q = (document.getElementById('tblSearch').value||'').toLowerCase().trim();
@@ -900,6 +917,7 @@ function renderAll(){
   safe(()=>renderChartCampo(records), 'gráfico por campo');
   safe(()=>renderChartTipo(records), 'gráfico por tipo');
   safe(()=>renderChartMotivo(records), 'gráfico por motivo');
+  safe(()=>renderChartAreaVisitada(records), 'gráfico de áreas visitadas');
   safe(()=>renderAccesosList(records), 'lista de accesos');
 }
 async function cargarYRenderizar(){
