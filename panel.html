@@ -156,6 +156,8 @@ input[type=number]{
 .chart-box-scroll{overflow-y:auto;max-height:260px;transition:max-height .28s ease;border-radius:var(--radius);}
 .chart-box-scroll.expanded{max-height:none;overflow-y:visible;}
 .chart-box-scroll .chart-box{height:260px;}
+.chart-box-scroll-area{overflow-y:auto;max-height:340px;transition:max-height .28s ease;border-radius:var(--radius);}
+.chart-box-scroll-area.expanded{max-height:none;overflow-y:visible;}
 .scard{
   background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);
   padding:14px 15px;border-left:4px solid var(--border);position:relative;
@@ -495,7 +497,12 @@ tr.acceso-row:hover td{background:var(--panel-alt);}
   <div class="panel" style="margin-top:22px;">
     <h2>Visitas por área / departamento</h2>
     <div class="desc">Qué área, departamento, oficina o persona recibió más visitas — dentro del filtro activo</div>
-    <div class="chart-box tall"><canvas id="chartArea" width="466" height="320" style="width: 466px; height: 320px;"></canvas></div>
+    <div class="chart-box-scroll-area" id="chartAreaScroll">
+      <div class="chart-box" id="chartAreaBox" style="height:320px;">
+        <canvas id="chartArea" width="466" height="320" style="width: 466px; height: 320px;"></canvas>
+      </div>
+    </div>
+    <div class="card-grid-toggle"><button type="button" id="btnToggleChartArea" style="display:none;">Ver todas las áreas ▾</button></div>
   </div>
 
   <div class="panel" style="margin-top:22px;">
@@ -862,11 +869,31 @@ function renderChartArea(records){
   const map = {};
   records.forEach(a=>{ const ar = a.areaVisita||'Sin especificar'; map[ar] = (map[ar]||0)+1; });
   const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  const box = document.getElementById('chartAreaBox');
+  const rowH = 24; // alto por barra, para que las etiquetas no se amontonen
+  const neededH = Math.max(320, entries.length*rowH + 40);
+  box.style.height = neededH+'px';
   drawHBarChart(document.getElementById('chartArea'), {
     labels: entries.map(e=>e[0]), values: entries.map(e=>e[1]),
     colors: entries.map(()=>COLORS.VERDE), xTitle:'visitas', valueFmt:v=>String(v)
   });
+  const wrap = document.getElementById('chartAreaScroll');
+  const btn = document.getElementById('btnToggleChartArea');
+  if(neededH > 340){
+    btn.style.display = '';
+    btn.dataset.count = entries.length;
+    btn.textContent = wrap.classList.contains('expanded') ? 'Mostrar menos ▴' : 'Ver todas las áreas ('+entries.length+') ▾';
+  } else {
+    btn.style.display = 'none';
+    wrap.classList.remove('expanded');
+  }
 }
+document.getElementById('btnToggleChartArea').addEventListener('click', function(){
+  const wrap = document.getElementById('chartAreaScroll');
+  wrap.classList.toggle('expanded');
+  const n = this.dataset.count || '';
+  this.textContent = wrap.classList.contains('expanded') ? 'Mostrar menos ▴' : 'Ver todas las áreas ('+n+') ▾';
+});
 function renderChartMotivo(records){
   const map = {};
   records.forEach(a=>{ const m = a.motivoVisita||'Sin especificar'; map[m] = (map[m]||0)+1; });
