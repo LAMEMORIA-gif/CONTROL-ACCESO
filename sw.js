@@ -1,6 +1,8 @@
-// Service Worker de Rondines — permite que la app abra sin conexión a internet
+// Service Worker de Control de Acceso — permite que la app abra sin conexión a internet
 // después de haberla visitado al menos una vez con conexión.
-const CACHE_NAME = 'control-acceso-cache-v8';
+// v9: ahora revisa primero internet (network-first) y sólo usa la copia guardada
+// si no hay conexión — así ya no hace falta borrar datos del sitio cada vez que se actualiza la app.
+const CACHE_NAME = 'control-acceso-cache-v9';
 const ASSETS = [
   './',
   './index.html',
@@ -38,15 +40,15 @@ self.addEventListener('activate', function(event){
 self.addEventListener('fetch', function(event){
   if(event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then(function(cached){
-      if(cached) return cached;
-      return fetch(event.request).then(function(response){
-        if(response && response.status===200 && response.type==='basic'){
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, clone); });
-        }
-        return response;
-      }).catch(function(){
+    fetch(event.request).then(function(response){
+      if(response && response.status===200 && response.type==='basic'){
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, clone); });
+      }
+      return response;
+    }).catch(function(){
+      return caches.match(event.request).then(function(cached){
+        if(cached) return cached;
         if(event.request.mode === 'navigate'){ return caches.match('./index.html'); }
       });
     })
