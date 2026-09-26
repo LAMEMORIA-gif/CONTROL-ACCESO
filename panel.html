@@ -80,12 +80,13 @@ h1{
 }
 .field{display:flex;flex-direction:column;gap:5px;min-width:150px;}
 .field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
-select,input[type=text]{
+select,input[type=text],input[type=date]{
   background:var(--panel-alt);border:1px solid var(--border);color:var(--text);
   padding:8px 10px;border-radius:7px;font-size:13.5px;font-family:inherit;
   outline:none;
 }
 select:focus,input:focus{border-color:var(--accent);}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.75);cursor:pointer;}
 .field.week-range{flex-direction:row;align-items:flex-end;gap:8px;}
 .field.week-range .inner{display:flex;flex-direction:column;gap:5px;}
 input[type=number]{
@@ -443,6 +444,10 @@ tr.acceso-row:hover td{background:var(--panel-alt);}
       <select id="fCampo"><option value="TODOS">Todos los campos</option></select>
     </div>
     <div class="field">
+      <label for="fFecha">Día específico</label>
+      <input type="date" id="fFecha">
+    </div>
+    <div class="field">
       <label for="fEstado">Estado</label>
       <select id="fEstado">
         <option value="TODOS">Todos</option>
@@ -485,6 +490,12 @@ tr.acceso-row:hover td{background:var(--panel-alt);}
       <div class="desc">Dentro del filtro activo</div>
       <div class="chart-box tall"><canvas id="chartTipo" width="466" height="320" style="width: 466px; height: 320px;"></canvas></div>
     </div>
+  </div>
+
+  <div class="panel" style="margin-top:22px;">
+    <h2>Visitas por área / departamento</h2>
+    <div class="desc">Qué área, departamento, oficina o persona recibió más visitas — dentro del filtro activo</div>
+    <div class="chart-box tall"><canvas id="chartArea" width="466" height="320" style="width: 466px; height: 320px;"></canvas></div>
   </div>
 
   <div class="panel" style="margin-top:22px;">
@@ -661,6 +672,13 @@ function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
 function avg(arr){ return arr.length ? sum(arr)/arr.length : 0; }
 function fmtPct(v){ return (Math.round(v*1000)/10).toFixed(1)+'%'; }
 function estadoDe(a){ return a.horaSalida ? 'SALIO' : 'DENTRO'; }
+function dateKeyLocal(ts){
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
+}
 const UMBRAL_HORAS_EXCEDIDO = 4; // horas dentro sin salida a partir de las cuales se marca como excedido
 function estaExcedido(a){ return !a.horaSalida && (Date.now()-a.horaIngreso) > UMBRAL_HORAS_EXCEDIDO*3600000; }
 
@@ -780,16 +798,24 @@ function refreshFilterLists(){
   fillSelect('fCampo', Array.from(new Set(ALL_ACCESOS.map(a=>a.campo))).sort(), 'Todos los campos');
   fillSelect('fTipo', Array.from(new Set(ALL_ACCESOS.map(a=>a.tipoPersona))).sort(), 'Todos los tipos');
   fillSelect('fMotivo', Array.from(new Set(ALL_ACCESOS.map(a=>a.motivoVisita).filter(Boolean))).sort(), 'Todos los motivos');
+  const fechaInput = document.getElementById('fFecha');
+  if(ALL_ACCESOS.length){
+    const fechas = ALL_ACCESOS.map(a=>dateKeyLocal(a.horaIngreso)).sort();
+    fechaInput.min = fechas[0];
+    fechaInput.max = fechas[fechas.length-1];
+  }
   document.getElementById('totalLabel').textContent = ALL_ACCESOS.length;
   document.getElementById('totalCamposLabel').textContent = new Set(ALL_ACCESOS.map(a=>a.campo)).size;
 }
 function applyFilters(){
   const campo = document.getElementById('fCampo').value;
+  const fecha = document.getElementById('fFecha').value;
   const estado = document.getElementById('fEstado').value;
   const tipo = document.getElementById('fTipo').value;
   const motivo = document.getElementById('fMotivo').value;
   return ALL_ACCESOS.filter(a=>{
     if(campo!=='TODOS' && a.campo!==campo) return false;
+    if(fecha && dateKeyLocal(a.horaIngreso)!==fecha) return false;
     if(estado==='EXCEDIDO'){ if(!estaExcedido(a)) return false; }
     else if(estado!=='TODOS' && estadoDe(a)!==estado) return false;
     if(tipo!=='TODOS' && a.tipoPersona!==tipo) return false;
@@ -830,6 +856,15 @@ function renderChartTipo(records){
   drawHBarChart(document.getElementById('chartTipo'), {
     labels: entries.map(e=>e[0]), values: entries.map(e=>e[1]),
     colors: entries.map(()=>COLORS.NARANJA), xTitle:'registros de acceso', valueFmt:v=>String(v)
+  });
+}
+function renderChartArea(records){
+  const map = {};
+  records.forEach(a=>{ const ar = a.areaVisita||'Sin especificar'; map[ar] = (map[ar]||0)+1; });
+  const entries = Object.entries(map).sort((a,b)=>b[1]-a[1]);
+  drawHBarChart(document.getElementById('chartArea'), {
+    labels: entries.map(e=>e[0]), values: entries.map(e=>e[1]),
+    colors: entries.map(()=>COLORS.VERDE), xTitle:'visitas', valueFmt:v=>String(v)
   });
 }
 function renderChartMotivo(records){
@@ -938,6 +973,7 @@ function renderAll(){
   safe(()=>renderKpis(records), 'KPIs');
   safe(()=>renderChartCampo(records), 'gráfico por campo');
   safe(()=>renderChartTipo(records), 'gráfico por tipo');
+  safe(()=>renderChartArea(records), 'gráfico por área/departamento');
   safe(()=>renderChartMotivo(records), 'gráfico por motivo');
   safe(()=>renderAccesosList(records), 'lista de accesos');
 }
@@ -947,9 +983,10 @@ async function cargarYRenderizar(){
   renderAll();
 }
 
-['fCampo','fEstado','fTipo','fMotivo'].forEach(id=>{ document.getElementById(id).addEventListener('change', renderAll); });
+['fCampo','fEstado','fTipo','fMotivo','fFecha'].forEach(id=>{ document.getElementById(id).addEventListener('change', renderAll); });
 document.getElementById('btnReset').addEventListener('click', function(){
   document.getElementById('fCampo').value = 'TODOS';
+  document.getElementById('fFecha').value = '';
   document.getElementById('fEstado').value = 'TODOS';
   document.getElementById('fTipo').value = 'TODOS';
   document.getElementById('fMotivo').value = 'TODOS';
@@ -970,6 +1007,7 @@ document.getElementById('btnReporteEjecutivo').addEventListener('click', functio
   const periodoTxt = fechas.length ? (fmtDateOnly(fechas[0])+' — '+fmtDateOnly(fechas[fechas.length-1])) : '—';
   const filtrosActivos = [];
   const fC = document.getElementById('fCampo').value; if(fC!=='TODOS') filtrosActivos.push('Campo: '+fC);
+  const fFec = document.getElementById('fFecha').value; if(fFec) filtrosActivos.push('Día: '+fFec);
   const fE = document.getElementById('fEstado').value; if(fE!=='TODOS') filtrosActivos.push('Estado: '+fE);
   const fT = document.getElementById('fTipo').value; if(fT!=='TODOS') filtrosActivos.push('Tipo: '+fT);
   const fM = document.getElementById('fMotivo').value; if(fM!=='TODOS') filtrosActivos.push('Motivo: '+fM);
