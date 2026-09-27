@@ -433,6 +433,15 @@ footer.note b{color:var(--muted);}
 .status-pill{font-size:11px;padding:3px 9px;border-radius:12px;white-space:nowrap;font-weight:600;}
 .status-pill.DENTRO{color:var(--verde);background:var(--verde-soft);}
 .status-pill.SALIO{color:var(--muted);background:rgba(139,149,166,.14);}
+.status-pill.RESTRINGIDO{color:var(--rojo);background:rgba(240,85,74,.16);}
+
+.chip-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.chip{
+  display:flex;align-items:center;gap:7px;background:var(--panel-alt);border:1px solid var(--border-soft);
+  border-radius:20px;padding:6px 12px;font-size:12.5px;
+}
+.chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;}
+.chip button:hover{color:var(--rojo);}
 
 </style>
 </head>
@@ -464,6 +473,37 @@ footer.note b{color:var(--muted);}
       <label class="req">Área / Campo</label>
       <input type="text" id="inCampo" list="dlCampo" placeholder="Ej. Campo Palomas">
       <datalist id="dlCampo"></datalist>
+    </div>
+  </div>
+
+  <div class="add-panel" id="panelRestringidos">
+    <div class="add-panel-head" id="panelRestringidosHead">
+      <h2>🚫 Lista de acceso restringido</h2>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="hint" id="restringidosHint">0 registrados</span>
+        <span class="chev">▾</span>
+      </div>
+    </div>
+    <div class="add-panel-body">
+      <div style="padding:16px 18px;">
+        <div style="color:var(--muted);font-size:12.5px;margin-bottom:12px;">
+          Registre aquí nombres o placas que NO deben tener acceso. Si al registrar un ingreso el nombre o las
+          placas coinciden con esta lista, aparecerá una alerta visual antes de completar el registro — usted
+          decide si continúa o no. También se marcará con esta alerta en "Actualmente dentro" y en el historial.
+          Se guarda en este teléfono.
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="formNuevoRestringido">
+          <select id="inTipoRestringido" style="width:120px;background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);">
+            <option value="nombre">Nombre</option>
+            <option value="placa">Placa</option>
+          </select>
+          <input type="text" id="inValorRestringido" placeholder="Nombre o placas" style="flex:1;min-width:140px;background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);">
+          <input type="text" id="inMotivoRestringido" placeholder="Motivo (opcional)" style="flex:1;min-width:140px;background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);">
+          <button type="button" class="btn-primary" id="btnAgregarRestringido" style="white-space:nowrap;">Registrar</button>
+        </div>
+        <div class="form-msg" id="restringidoFormMsg" style="margin-top:8px;"></div>
+        <div class="chip-list" id="listaRestringidosChips" style="margin-top:12px;"></div>
+      </div>
     </div>
   </div>
 
@@ -506,10 +546,13 @@ footer.note b{color:var(--muted);}
     <div class="modal-box" style="max-width:460px;">
       <h3>➕ Registrar nuevo ingreso</h3>
       <div class="modal-sub" id="modalIngresoSub">—</div>
+      <div class="form-msg err" id="alertaRestringidoModal" style="display:none;"></div>
+      <div class="form-msg ok" id="avisoAutocompletoModal" style="display:none;"></div>
       <form id="formIngreso">
         <div class="field-inline">
           <label class="req">Nombre del proveedor / visitante</label>
-          <input type="text" id="inNombre" placeholder="Nombre completo" required>
+          <input type="text" id="inNombre" placeholder="Nombre completo" required list="dlNombreVisitante" autocomplete="off">
+          <datalist id="dlNombreVisitante"></datalist>
         </div>
         <div class="field-inline">
           <label class="req">Tipo</label>
@@ -523,7 +566,8 @@ footer.note b{color:var(--muted);}
         </div>
         <div class="field-inline">
           <label>Empresa de procedencia (si aplica)</label>
-          <input type="text" id="inEmpresa" placeholder="Ej. Transportes del Norte S.A.">
+          <input type="text" id="inEmpresa" placeholder="Ej. Transportes del Norte S.A." list="dlEmpresa" autocomplete="off">
+          <datalist id="dlEmpresa"></datalist>
         </div>
         <div class="field-inline">
           <label class="req">Motivo de la visita</label>
@@ -723,14 +767,19 @@ function renderKpis(){
   const hoyTs = hoy.getTime();
   const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida);
   const excedidos = dentro.filter(a=>estaExcedido(a));
+  const restringidosDentro = dentro.filter(a=>estaEnListaRestringida(a));
   const hoyRegistros = ALL_ACCESOS.filter(a=>a.horaIngreso>=hoyTs);
   const duracionesHoy = hoyRegistros.filter(a=>a.horaSalida).map(a=>(a.horaSalida-a.horaIngreso)/60000);
+
+  let subDentro = 'en esta caseta';
+  if(restringidosDentro.length>0) subDentro = '🚫 '+restringidosDentro.length+' en lista restringida';
+  else if(excedidos.length>0) subDentro = '⏰ '+excedidos.length+' con tiempo excedido (>'+UMBRAL_HORAS_EXCEDIDO+'h)';
 
   document.getElementById('kpisRow').innerHTML = `
     <div class="kpi semaforo"><div class="kpi-accentbar"></div>
       <div class="label">Actualmente dentro</div>
-      <div class="value"><span class="dot ${excedidos.length>0?'ROJO':(dentro.length>0?'AMARILLO':'VERDE')}"></span>${dentro.length}</div>
-      <div class="sub">${excedidos.length>0 ? ('⏰ '+excedidos.length+' con tiempo excedido (>'+UMBRAL_HORAS_EXCEDIDO+'h)') : 'en esta caseta'}</div>
+      <div class="value"><span class="dot ${(excedidos.length>0||restringidosDentro.length>0)?'ROJO':(dentro.length>0?'AMARILLO':'VERDE')}"></span>${dentro.length}</div>
+      <div class="sub">${subDentro}</div>
     </div>
     <div class="kpi"><div class="kpi-accentbar"></div>
       <div class="label">Registros de hoy</div>
@@ -768,11 +817,12 @@ function renderDentroList(){
   }
   cont.innerHTML = dentro.map(a=>{
     const excedido = estaExcedido(a);
+    const restringido = estaEnListaRestringida(a);
     return `
-    <div class="visitante-card" style="${excedido?'border-left-color:var(--rojo);background:var(--rojo-soft);':''}">
+    <div class="visitante-card" style="${(excedido||restringido)?'border-left-color:var(--rojo);background:var(--rojo-soft);':''}">
       ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
       <div class="v-body">
-        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ TIEMPO EXCEDIDO</span>':''}</div>
+        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span>${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ TIEMPO EXCEDIDO</span>':''}</div>
         <div class="v-meta">
           📅 ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)} (lleva ${fmtDuracion(a.horaIngreso, null)}) · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}
           ${a.empresaProcedencia ? ' · '+a.empresaProcedencia : ''}
@@ -816,11 +866,12 @@ function renderHistorial(){
   document.getElementById('historialList').innerHTML = lista.map(a=>{
     const estado = a.horaSalida ? 'SALIO' : 'DENTRO';
     const excedido = estaExcedido(a);
+    const restringido = estaEnListaRestringida(a);
     return `<div class="history-item">
       <div style="display:flex;gap:12px;align-items:center;">
         ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
         <div>
-          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
+          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
           <div class="h-sub">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acompañante'+(a.numAcompanantes===1?'':'s')):''}</div>
           <div class="h-sub">📅 Fecha: ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)}${a.horaSalida ? (' · 🕐 Salida: '+fmtHora(a.horaSalida)+' · ⏱ Permanencia: '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ' · 🕐 Salida: — (aún dentro)'}</div>
         </div>
@@ -846,11 +897,153 @@ function refreshCampoDatalist(){
   document.getElementById('dlCampo').innerHTML = campos.map(c=>`<option value="${c}">`).join('');
 }
 
+// ---------- autocompletar nombre/empresa de visitantes ya registrados ----------
+function refreshVisitanteDatalists(){
+  const nombres = Array.from(new Set(ALL_ACCESOS.map(a=>a.nombre).filter(Boolean))).sort();
+  const empresas = Array.from(new Set(ALL_ACCESOS.map(a=>a.empresaProcedencia).filter(Boolean))).sort();
+  document.getElementById('dlNombreVisitante').innerHTML = nombres.map(n=>`<option value="${n}">`).join('');
+  document.getElementById('dlEmpresa').innerHTML = empresas.map(e=>`<option value="${e}">`).join('');
+}
+function buscarUltimoRegistroDeNombre(nombre){
+  const n = (nombre||'').trim().toLowerCase();
+  if(!n) return null;
+  const coincidencias = ALL_ACCESOS.filter(a=>(a.nombre||'').trim().toLowerCase()===n);
+  if(!coincidencias.length) return null;
+  return coincidencias.reduce((mas,r)=> (!mas || r.horaIngreso>mas.horaIngreso) ? r : mas, null);
+}
+
+// ---------- lista de acceso restringido (nombres / placas) ----------
+const RESTRINGIDOS_KEY = 'control_acceso_restringidos_v1';
+function loadRestringidos(){
+  try{ const raw = localStorage.getItem(RESTRINGIDOS_KEY); const d = raw?JSON.parse(raw):[]; return Array.isArray(d)?d:[]; }catch(e){ return []; }
+}
+function saveRestringidos(arr){ try{ localStorage.setItem(RESTRINGIDOS_KEY, JSON.stringify(arr)); return true; }catch(e){ return false; } }
+function normalizaPlaca(p){ return (p||'').trim().toUpperCase().replace(/[\s-]+/g,''); }
+function buscarEnRestringidos(nombre, placas){
+  const lista = loadRestringidos();
+  const n = (nombre||'').trim().toLowerCase();
+  const p = normalizaPlaca(placas);
+  return lista.find(r=>{
+    if(r.tipo==='nombre') return n && r.valor.trim().toLowerCase()===n;
+    if(r.tipo==='placa') return p && normalizaPlaca(r.valor)===p;
+    return false;
+  }) || null;
+}
+function estaEnListaRestringida(a){ return !!buscarEnRestringidos(a.nombre, a.placas); }
+function renderRestringidosChips(){
+  const lista = loadRestringidos();
+  document.getElementById('restringidosHint').textContent = lista.length+' registrado'+(lista.length===1?'':'s');
+  document.getElementById('listaRestringidosChips').innerHTML = lista.map((r,i)=>`
+    <span class="chip">${r.tipo==='placa'?'🚗':'👤'} ${r.valor}${r.motivo?' — '+r.motivo:''} <button type="button" class="btn-del-restringido" data-idx="${i}" title="Quitar">✕</button></span>
+  `).join('') || '<span style="color:var(--muted);font-size:12px;">Aún no hay nombres ni placas registrados.</span>';
+}
+document.getElementById('btnAgregarRestringido').addEventListener('click', function(){
+  const tipo = document.getElementById('inTipoRestringido').value;
+  const valor = document.getElementById('inValorRestringido').value.trim();
+  const motivo = document.getElementById('inMotivoRestringido').value.trim();
+  const msgEl = document.getElementById('restringidoFormMsg');
+  if(!valor){ msgEl.textContent = 'Escriba el nombre o las placas.'; msgEl.className = 'form-msg err'; return; }
+  const lista = loadRestringidos();
+  lista.push({tipo, valor, motivo});
+  saveRestringidos(lista);
+  document.getElementById('inValorRestringido').value = '';
+  document.getElementById('inMotivoRestringido').value = '';
+  msgEl.textContent = 'Registrado en la lista de acceso restringido.'; msgEl.className = 'form-msg ok';
+  renderRestringidosChips();
+  renderDentroList(); renderHistorial();
+});
+document.getElementById('listaRestringidosChips').addEventListener('click', function(e){
+  const btn = e.target.closest('.btn-del-restringido');
+  if(!btn) return;
+  const idx = parseInt(btn.getAttribute('data-idx'),10);
+  const lista = loadRestringidos();
+  const quitado = lista[idx] ? lista[idx].valor : '';
+  if(!confirm('¿Quitar a "'+quitado+'" de la lista de acceso restringido?')) return;
+  lista.splice(idx,1);
+  saveRestringidos(lista);
+  renderRestringidosChips();
+  renderDentroList(); renderHistorial();
+});
+const panelRestringidos = document.getElementById('panelRestringidos');
+document.getElementById('panelRestringidosHead').addEventListener('click', ()=>{ panelRestringidos.classList.toggle('open'); });
+renderRestringidosChips();
+
+// ---------- verificación en vivo dentro del modal de registro (autocompletar + alerta de lista restringida) ----------
+function verificarNombreEnModal(){
+  const nombre = document.getElementById('inNombre').value;
+  const avisoAuto = document.getElementById('avisoAutocompletoModal');
+  if(!pendienteEnCurso){
+    const previo = buscarUltimoRegistroDeNombre(nombre);
+    if(previo && nombre.trim()){
+      if(!document.getElementById('inTipoPersona').value) document.getElementById('inTipoPersona').value = previo.tipoPersona||'';
+      if(!document.getElementById('inEmpresa').value) document.getElementById('inEmpresa').value = previo.empresaProcedencia||'';
+      if(!document.getElementById('inPlacas').value) document.getElementById('inPlacas').value = previo.placas||'';
+      if(!document.getElementById('inGafete').value) document.getElementById('inGafete').value = previo.gafeteNum||'';
+      if(!document.getElementById('inTipoID').value) document.getElementById('inTipoID').value = previo.tipoID||'';
+      avisoAuto.textContent = '🔁 Visitante reconocido — se autocompletaron sus datos de su visita anterior ('+fmtFecha(previo.horaIngreso)+'). Verifíquelos antes de registrar (la foto de identificación sigue siendo obligatoria capturarla de nuevo).';
+      avisoAuto.style.display = 'block';
+    } else {
+      avisoAuto.style.display = 'none';
+    }
+  }
+  verificarListaRestringidaEnModal();
+}
+function verificarListaRestringidaEnModal(){
+  const nombre = document.getElementById('inNombre').value;
+  const placas = document.getElementById('inPlacas').value;
+  const alertaEl = document.getElementById('alertaRestringidoModal');
+  const match = buscarEnRestringidos(nombre, placas);
+  if(match){
+    alertaEl.textContent = '🚫 ALERTA: '+(match.tipo==='placa'?'estas placas':'este nombre')+' está en la lista de acceso restringido'+(match.motivo?(' — motivo: '+match.motivo):'')+'. Verifique antes de continuar.';
+    alertaEl.style.display = 'block';
+    if(navigator.vibrate){ try{ navigator.vibrate([150,80,150,80,150]); }catch(e){} }
+  } else {
+    alertaEl.style.display = 'none';
+  }
+}
+document.getElementById('inNombre').addEventListener('input', verificarNombreEnModal);
+document.getElementById('inPlacas').addEventListener('input', verificarListaRestringidaEnModal);
+
+// ---------- recordatorio proactivo de "tiempo excedido sin salida" ----------
+const NOTIF_EXCEDIDO_KEY = 'control_acceso_notificados_excedido_v1';
+function loadNotificadosExcedido(){
+  try{ const raw = localStorage.getItem(NOTIF_EXCEDIDO_KEY); const d = raw?JSON.parse(raw):[]; return new Set(Array.isArray(d)?d:[]); }catch(e){ return new Set(); }
+}
+function saveNotificadosExcedido(set){ try{ localStorage.setItem(NOTIF_EXCEDIDO_KEY, JSON.stringify(Array.from(set))); }catch(e){} }
+let notificadosExcedido = loadNotificadosExcedido();
+let notifPermisoSolicitado = false;
+async function pedirPermisoNotificacion(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission==='default' && !notifPermisoSolicitado){
+    notifPermisoSolicitado = true;
+    try{ await Notification.requestPermission(); }catch(e){}
+  }
+}
+function revisarExcedidosYNotificar(){
+  const dentro = ALL_ACCESOS.filter(a=>!a.horaSalida);
+  const excedidosAhora = dentro.filter(a=>estaExcedido(a));
+  excedidosAhora.forEach(a=>{
+    if(!notificadosExcedido.has(a.id)){
+      notificadosExcedido.add(a.id);
+      if('Notification' in window && Notification.permission==='granted'){
+        try{ new Notification('Control de Acceso', {body: a.nombre+' lleva más de '+UMBRAL_HORAS_EXCEDIDO+'h dentro sin registrar salida.'}); }catch(e){}
+      }
+      if(navigator.vibrate){ try{ navigator.vibrate([200,100,200]); }catch(e){} }
+    }
+  });
+  const idsVigentes = new Set(dentro.map(a=>a.id));
+  Array.from(notificadosExcedido).forEach(id=>{ if(!idsVigentes.has(id)) notificadosExcedido.delete(id); });
+  saveNotificadosExcedido(notificadosExcedido);
+}
+pedirPermisoNotificacion();
+
 function renderAll(){
   renderKpis();
   renderDentroList();
   renderHistorial();
   refreshCampoDatalist();
+  refreshVisitanteDatalists();
+  revisarExcedidosYNotificar();
 }
 async function cargarYRenderizar(){
   ALL_ACCESOS = await dbGetAllAccesos();
@@ -875,6 +1068,8 @@ document.getElementById('btnNuevoIngreso').addEventListener('click', function(){
   modalFotoIDData = null;
   document.getElementById('fotoIDPreview').style.display = 'none';
   document.getElementById('formIngresoMsg').className = 'form-msg';
+  document.getElementById('alertaRestringidoModal').style.display = 'none';
+  document.getElementById('avisoAutocompletoModal').style.display = 'none';
   modalIngreso.classList.add('open');
 });
 document.getElementById('btnCancelarIngreso').addEventListener('click', function(){
@@ -964,6 +1159,8 @@ document.getElementById('pendientesList').addEventListener('click', async functi
     document.getElementById('fotoIDPreview').src = pendiente.foto;
     document.getElementById('fotoIDPreview').style.display = 'block';
     document.getElementById('formIngresoMsg').className = 'form-msg';
+    document.getElementById('alertaRestringidoModal').style.display = 'none';
+    document.getElementById('avisoAutocompletoModal').style.display = 'none';
     modalIngreso.classList.add('open');
   }
 });
@@ -1038,8 +1235,8 @@ document.getElementById('btnExportarTodo').addEventListener('click', function(){
 cargarYRenderizar();
 cargarPendientes();
 
-// refresca cada minuto para que la alerta de "tiempo excedido" se actualice sola
-setInterval(function(){ renderKpis(); renderDentroList(); }, 60000);
+// refresca cada minuto para que la alerta de "tiempo excedido" se actualice sola y se notifique proactivamente
+setInterval(function(){ renderKpis(); renderDentroList(); revisarExcedidosYNotificar(); }, 60000);
 
 // ---------- registrar Service Worker (permite abrir la app sin conexión a internet) ----------
 if("serviceWorker" in navigator){
