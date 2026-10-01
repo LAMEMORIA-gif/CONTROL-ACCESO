@@ -1025,13 +1025,43 @@ function renderAll(){
   safe(()=>renderAccesosList(records), 'lista de accesos');
   safe(()=>revisarReporteProgramado(), 'reporte programado');
 }
+// ---------- unificar nombres de campo ----------
+// El campo se escribe a mano en cada caseta, así que el mismo lugar llega como "Empaque", "EMPAQUE ",
+// "empaque" o "Campo Empaque". Aquí se agrupan todas esas variantes bajo un solo nombre (el más usado)
+// para que el filtro, las gráficas y el reporte las cuenten juntas. No modifica los datos guardados.
+function claveCampo(txt){
+  return String(txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/\s+/g,' ').trim().replace(/^campo\s+/,'') || '(sin campo)';
+}
+function unificarCampos(lista){
+  const conteo = {}; // clave -> {variante: veces}
+  lista.forEach(a=>{
+    const orig = (a.campoOriginal!==undefined ? a.campoOriginal : a.campo);
+    const k = claveCampo(orig);
+    const v = String(orig||'').replace(/\s+/g,' ').trim() || '(sin campo)';
+    conteo[k] = conteo[k] || {}; conteo[k][v] = (conteo[k][v]||0)+1;
+  });
+  const nombre = {};
+  Object.keys(conteo).forEach(k=>{
+    nombre[k] = Object.entries(conteo[k]).sort((x,y)=>y[1]-x[1] || x[0].localeCompare(y[0]))[0][0];
+  });
+  lista.forEach(a=>{
+    if(a.campoOriginal===undefined) a.campoOriginal = a.campo;
+    a.campo = nombre[claveCampo(a.campoOriginal)];
+    // por si algún registro trae la hora como texto en vez de número
+    if(typeof a.horaIngreso==='string'){ const n = Number(a.horaIngreso); a.horaIngreso = isNaN(n) ? new Date(a.horaIngreso).getTime() : n; }
+    if(typeof a.horaSalida==='string' && a.horaSalida){ const n = Number(a.horaSalida); a.horaSalida = isNaN(n) ? new Date(a.horaSalida).getTime() : n; }
+  });
+  return lista;
+}
 async function cargarYRenderizar(){
-  ALL_ACCESOS = await dbGetAll();
+  ALL_ACCESOS = unificarCampos(await dbGetAll());
   refreshFilterLists();
   renderAll();
 }
 
 ['fCampo','fEstado','fTipo','fMotivo','fFecha'].forEach(id=>{ document.getElementById(id).addEventListener('change', renderAll); });
+document.getElementById('fFecha').addEventListener('input', renderAll);
 document.getElementById('btnReset').addEventListener('click', function(){
   document.getElementById('fCampo').value = 'TODOS';
   document.getElementById('fFecha').value = '';
