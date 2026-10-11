@@ -1226,8 +1226,17 @@ document.getElementById('btnExportarTodo').addEventListener('click', function(){
   const blob = new Blob([JSON.stringify(ALL_ACCESOS, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const fecha = new Date().toISOString().slice(0,10);
-  a.href = url; a.download = 'control_acceso_'+fecha+'.json';
+  // Nombre único por campo, fecha y hora local, para que en el panel no se reemplacen archivos de distintos campos
+  const d = new Date(); const p2 = n => String(n).padStart(2,'0');
+  const fecha = d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+  const hora = p2(d.getHours())+p2(d.getMinutes());
+  let campo = document.getElementById('inCampo').value.trim();
+  if(!campo && ALL_ACCESOS.length){
+    const cuenta = {}; ALL_ACCESOS.forEach(x=>{ if(x.campo) cuenta[x.campo]=(cuenta[x.campo]||0)+1; });
+    campo = Object.keys(cuenta).sort((x,y)=>cuenta[y]-cuenta[x])[0] || '';
+  }
+  const campoArchivo = (campo||'SIN-CAMPO').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'').toUpperCase();
+  a.href = url; a.download = 'control_acceso_'+campoArchivo+'_'+fecha+'_'+hora+'.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 });
