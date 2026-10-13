@@ -137,7 +137,7 @@ function pintarInvitacion(i, visitante){
   document.getElementById('invDatos').innerHTML =
     dato('Nombre', nombre) + dato('Empresa', (visitante && visitante.e) || i.e) +
     dato('Lugar', 'Rancho Agrícola La Memoria'+(i.c?(' — '+i.c):'')) +
-    dato('Visita a', i.a) + dato('Autoriza', i.h) + dato('Motivo', i.m) +
+    dato('Visita a', i.a) + dato('Autoriza', i.h) + dato('Motivo', i.m) + dato('N° económico de la unidad', i.ne) + (i.u ? (dato('Unidad', [i.u.tv,i.u.ma,i.u.mo,i.u.an].filter(Boolean).join(' ')) + dato('Color', i.u.co) + dato('Placas', i.p) + dato('Capacidad', i.u.cap ? i.u.cap+' pasajeros' : '')) : '') +
     dato(i.t==='F'?'Vigencia':'Fecha', cuando) +
     (i.t==='F' ? dato('Días', QA.textoDias(i.dw)) : '') + dato('Horario', horario);
   mostrar('cardInvitacion', true);

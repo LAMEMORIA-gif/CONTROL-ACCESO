@@ -579,7 +579,7 @@ footer.note b{color:var(--muted);}
     <div class="desc">Guardados en este teléfono — expórtelos para enviarlos al supervisor</div>
   </div>
   <div class="table-toolbar" style="margin-bottom:12px;">
-    <input type="text" id="historialSearch" placeholder="Buscar por nombre, placas o gafete…">
+    <input type="text" id="historialSearch" placeholder="Buscar por nombre, placas, gafete o N° económico…">
     <span class="table-count" id="historialCount">0 registros</span>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
@@ -625,6 +625,12 @@ footer.note b{color:var(--muted);}
             <option value="Transporte de personal regional">Transporte de personal regional</option>
             <option value="Otro">Otro</option>
           </select>
+        </div>
+        <div class="field-inline qr-oculto" id="boxNumEconomico">
+          <label class="req">N° económico de la unidad</label>
+          <input type="text" id="inNumEconomico" list="dlUnidades" placeholder="Ej. G233" autocapitalize="characters" autocomplete="off">
+          <datalist id="dlUnidades"></datalist>
+          <div class="form-msg ok" id="avisoUnidadModal" style="display:none;margin-top:6px;"></div>
         </div>
         <div class="field-inline">
           <label class="req">Área y/o persona a la que visita</label>
@@ -917,6 +923,7 @@ function renderDentroList(){
           📅 ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)} (lleva ${fmtDuracion(a.horaIngreso, null)}) · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}
           ${a.empresaProcedencia ? ' · '+a.empresaProcedencia : ''}
           ${a.numAcompanantes>0 ? ' · <span class="gafete-pill">👥 +'+a.numAcompanantes+'</span>' : ''}
+          ${a.numEconomico ? ' · <span class="gafete-pill">🚌 Unidad '+a.numEconomico+'</span>'+(a.unidad?(' '+descUnidad(a.unidad)):'') : ''}
           ${a.placas ? ' · <span class="gafete-pill">🚗 '+a.placas+'</span>' : ''}
           ${a.gafeteNum ? ' · <span class="gafete-pill">🪪 #'+a.gafeteNum+'</span>' : ''}
         </div>
@@ -949,6 +956,7 @@ function renderHistorial(){
       (a.nombre||'').toLowerCase().includes(q) ||
       (a.placas||'').toLowerCase().includes(q) ||
       (a.gafeteNum||'').toLowerCase().includes(q) ||
+      (a.numEconomico||'').toLowerCase().includes(q) ||
       (a.empresaProcedencia||'').toLowerCase().includes(q)
     );
   }
@@ -962,7 +970,7 @@ function renderHistorial(){
         ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
         <div>
           <div class="h-main">${a.nombre}${a.qrVerificado?' <span class="status-pill" style="color:var(--accent);background:rgba(79,143,214,.16);">📲 QR</span>':''} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
-          <div class="h-sub">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acompañante'+(a.numAcompanantes===1?'':'s')):''}</div>
+          <div class="h-sub">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'}${a.numEconomico?(' · 🚌 Unidad '+a.numEconomico):''} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acompañante'+(a.numAcompanantes===1?'':'s')):''}</div>
           <div class="h-sub">📅 Fecha: ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)}${a.horaSalida ? (' · 🕐 Salida: '+fmtHora(a.horaSalida)+' · ⏱ Permanencia: '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ' · 🕐 Salida: — (aún dentro)'}</div>
         </div>
       </div>
@@ -1070,6 +1078,8 @@ function verificarNombreEnModal(){
       if(!document.getElementById('inPlacas').value) document.getElementById('inPlacas').value = previo.placas||'';
       if(!document.getElementById('inGafete').value) document.getElementById('inGafete').value = previo.gafeteNum||'';
       if(!document.getElementById('inTipoID').value) document.getElementById('inTipoID').value = previo.tipoID||'';
+      if(previo.numEconomico && !document.getElementById('inMotivoVisita').value){ document.getElementById('inMotivoVisita').value = MOTIVO_TRANSPORTE_REGIONAL; aplicarMotivoModal(); }
+      if(previo.numEconomico && !document.getElementById('inNumEconomico').value) document.getElementById('inNumEconomico').value = previo.numEconomico;
       avisoAuto.textContent = '🔁 Visitante reconocido — se autocompletaron sus datos de su visita anterior ('+fmtFecha(previo.horaIngreso)+'). Verifíquelos antes de registrar (la foto de identificación sigue siendo obligatoria capturarla de nuevo).';
       avisoAuto.style.display = 'block';
     } else {
@@ -1139,6 +1149,47 @@ async function cargarYRenderizar(){
   ALL_ACCESOS = await dbGetAllAccesos();
   renderAll();
 }
+
+// ---------- N° económico (solo transporte de personal regional) ----------
+function normaEconomico(t){ return String(t||'').trim().toUpperCase().replace(/\s+/g,''); }
+const UNIDADES_KEY = 'control_acceso_unidades_v1';
+function loadUnidades(){ try{ const d = JSON.parse(localStorage.getItem(UNIDADES_KEY)||'{}'); return (d && typeof d==='object' && !Array.isArray(d)) ? d : {}; }catch(e){ return {}; } }
+function guardarUnidad(ne, datos){
+  if(!ne) return;
+  const c = loadUnidades();
+  c[ne] = Object.assign({}, c[ne]||{}, datos, {ne, act: Date.now()});
+  Object.keys(c[ne]).forEach(k=>{ if(c[ne][k]==='' || c[ne][k]==null) delete c[ne][k]; });
+  try{ localStorage.setItem(UNIDADES_KEY, JSON.stringify(c)); }catch(e){}
+}
+function descUnidad(u){ return u ? [u.tv,u.ma,u.mo,u.an].filter(Boolean).join(' ')+(u.co?(' · '+u.co):'')+(u.cap?(' · '+u.cap+' pasajeros'):'') : ''; }
+function refrescarDatalistUnidades(){
+  const dl = document.getElementById('dlUnidades'); if(!dl) return;
+  dl.innerHTML = Object.values(loadUnidades()).map(u=>`<option value="${u.ne}">${descUnidad(u.unidad||{})}</option>`).join('');
+}
+// al escribir un N° económico conocido, se llenan solos placas, empresa y chofer (evita la doble captura)
+function autocompletarUnidadModal(){
+  const ne = normaEconomico(document.getElementById('inNumEconomico').value);
+  const u = loadUnidades()[ne];
+  const aviso = document.getElementById('avisoUnidadModal');
+  if(!u){ aviso.style.display = 'none'; return; }
+  if(!document.getElementById('inPlacas').value && u.placas) document.getElementById('inPlacas').value = u.placas;
+  if(!document.getElementById('inEmpresa').value && u.empresa) document.getElementById('inEmpresa').value = u.empresa;
+  if(!document.getElementById('inNombre').value && u.chofer) document.getElementById('inNombre').value = u.chofer;
+  if(!document.getElementById('inAreaVisita').value && u.area) document.getElementById('inAreaVisita').value = u.area;
+  if(!document.getElementById('inTipoPersona').value && u.tipoPersona) document.getElementById('inTipoPersona').value = u.tipoPersona;
+  aviso.textContent = '🚌 Unidad '+ne+' reconocida'+(u.unidad?(': '+descUnidad(u.unidad)):'')+(u.placas?(' · placas '+u.placas):'')+'. Datos cargados — verifíquelos.';
+  aviso.style.display = 'block';
+  verificarListaRestringidaEnModal();
+}
+function aplicarMotivoModal(){
+  const esTR = document.getElementById('inMotivoVisita').value===MOTIVO_TRANSPORTE_REGIONAL;
+  document.getElementById('boxNumEconomico').classList.toggle('qr-oculto', !esTR);
+}
+document.getElementById('inMotivoVisita').addEventListener('change', aplicarMotivoModal);
+document.getElementById('inNumEconomico').addEventListener('change', autocompletarUnidadModal);
+document.getElementById('inNumEconomico').addEventListener('input', function(){ if(loadUnidades()[normaEconomico(this.value)]) autocompletarUnidadModal(); else document.getElementById('avisoUnidadModal').style.display='none'; });
+refrescarDatalistUnidades();
+document.getElementById('formIngreso').addEventListener('reset', ()=>setTimeout(aplicarMotivoModal, 0));
 
 // ---------- modal: registrar nuevo ingreso ----------
 const modalIngreso = document.getElementById('modalIngreso');
@@ -1286,11 +1337,17 @@ document.getElementById('formIngreso').addEventListener('submit', async function
     msgEl.className = 'form-msg err';
     return;
   }
+  const numEconomico = motivoVisita===MOTIVO_TRANSPORTE_REGIONAL ? normaEconomico(document.getElementById('inNumEconomico').value) : '';
+  if(motivoVisita===MOTIVO_TRANSPORTE_REGIONAL && !numEconomico){
+    msgEl.textContent = 'Escriba el N° económico de la unidad de transporte.';
+    msgEl.className = 'form-msg err';
+    return;
+  }
   const acceso = {
     id: nextId('acceso'),
     campo: document.getElementById('inCampo').value.trim(),
     guardiaConfirma: document.getElementById('inGuardiaConfirma').value.trim(),
-    nombre, tipoPersona, motivoVisita, areaVisita,
+    nombre, tipoPersona, motivoVisita, areaVisita, numEconomico,
     empresaProcedencia: document.getElementById('inEmpresa').value.trim(),
     numAcompanantes: parseInt(document.getElementById('inAcompanantes').value,10) || 0,
     placas: document.getElementById('inPlacas').value.trim(),
@@ -1302,6 +1359,12 @@ document.getElementById('formIngreso').addEventListener('submit', async function
     horaSalida: null
   };
   if(qrEnCurso){ Object.assign(acceso, qrCamposRegistro(qrEnCurso)); }
+  if(acceso.numEconomico){
+    const uCat = loadUnidades()[acceso.numEconomico];
+    if(!acceso.unidad && uCat && uCat.unidad) acceso.unidad = uCat.unidad;
+    guardarUnidad(acceso.numEconomico, {placas: acceso.placas, empresa: acceso.empresaProcedencia, chofer: acceso.nombre, area: acceso.areaVisita, tipoPersona: acceso.tipoPersona, unidad: acceso.unidad || (uCat && uCat.unidad) || undefined});
+    refrescarDatalistUnidades();
+  }
   await dbSaveAcceso(acceso);
   if(qrEnCurso){ qrMarcarUsado(qrEnCurso); qrEnCurso = null; }
   if(pendienteEnCurso){
@@ -1492,12 +1555,16 @@ async function procesarCodigoQR(texto, modo){
   }
   const datos = {
     nombre: (vis.n || inv.n || '').trim(), empresa: vis.e || inv.e || '', placas: vis.p || inv.p || '', tipoID: vis.ti || inv.ti || '',
-    acompanantes: (vis.ac!=null ? vis.ac : inv.ac) || 0, telefono: vis.tel || ''
+    acompanantes: (vis.ac!=null ? vis.ac : inv.ac) || 0, telefono: vis.tel || '',
+    numEconomico: normaEconomico(inv.ne || vis.ne || '')
   };
   const campo = document.getElementById('inCampo').value.trim();
   const problemas = QA.revisarVigencia(inv, campo);
   const graves = [];
   if(!datos.nombre) graves.push('El código no trae nombre del visitante: pida que llene el formato o registre manualmente.');
+  if(inv.u && inv.u.pol && inv.u.pol < QA.hoyISO()) graves.push('La póliza de seguro de la unidad venció el '+QA.fechaLarga(inv.u.pol)+'.');
+  if(inv.t==='F' && inv.ff){ const [yy,mm,dd] = inv.ff.split('-').map(Number); const h = new Date(); h.setHours(0,0,0,0); const dias = Math.round((new Date(yy,mm-1,dd)-h)/86400000); if(dias>=0 && dias<=7) problemas.push('El pase caduca en '+dias+' día'+(dias===1?'':'s')+' ('+QA.fechaLarga(inv.ff)+'): avise al supervisor para renovarlo.'); }
+  if(inv.m===MOTIVO_TRANSPORTE_REGIONAL && !datos.numEconomico) problemas.push('El QR es de transporte de personal regional pero no trae N° económico: anótelo al registrar.');
   if(inv.n && vis.n && QA.normaliza(inv.n)!==QA.normaliza(vis.n)) problemas.push('El nombre que llenó el visitante ("'+vis.n+'") no coincide con el de la invitación ("'+inv.n+'"). Revise la identificación.');
   if(inv.t==='U'){
     const usado = qrLoadUsados()[inv.id];
@@ -1507,11 +1574,15 @@ async function procesarCodigoQR(texto, modo){
   const restr = buscarEnRestringidos(datos.nombre, datos.placas);
   if(restr) graves.push('🚫 '+(restr.tipo==='placa'?'Las placas':'El nombre')+' está en la LISTA DE ACCESO RESTRINGIDO'+(restr.motivo?(' — '+restr.motivo):'')+'.');
 
-  const tipoTxt = inv.t==='F' ? 'Pase frecuente' : 'Visita agendada';
+  const tipoTxt = inv.ne ? ('Pase de unidad '+normaEconomico(inv.ne)) : (inv.t==='F' ? 'Pase frecuente' : 'Visita agendada');
   let vigTxt = inv.t==='F' ? ('al '+QA.fechaLarga(inv.ff)+' · '+QA.textoDias(inv.dw)) : (QA.fechaLarga(inv.f)+(inv.hc?(' · cita '+inv.hc):''));
   if(inv.hi || inv.hf) vigTxt += ' · '+(inv.hi||'')+'–'+(inv.hf||'');
   const html = qrDato('Nombre', datos.nombre) + qrDato('Empresa', datos.empresa) + qrDato('Tipo', inv.tp) +
     qrDato('Visita a', inv.a) + qrDato('Autoriza', inv.h) + qrDato('Motivo', inv.m) +
+    qrDato('N° económico', datos.numEconomico ? ('🚌 '+datos.numEconomico+' — verifíquelo en la unidad') : '') +
+    qrDato('Unidad', inv.u ? [inv.u.tv, inv.u.ma, inv.u.mo, inv.u.an].filter(Boolean).join(' ') : '') +
+    qrDato('Color', inv.u && inv.u.co) + qrDato('Capacidad', inv.u && inv.u.cap ? (inv.u.cap+' pasajeros') : '') +
+    qrDato('Señas', inv.u && inv.u.se) +
     qrDato('Placas', datos.placas) + qrDato('Identificación', datos.tipoID ? (datos.tipoID+' — verifíquela') : 'Pida identificación oficial') +
     qrDato('Acompañantes', datos.acompanantes ? String(datos.acompanantes) : '') +
     qrDato(inv.t==='F'?'Vigencia':'Fecha', vigTxt) + qrDato('Campo', inv.c || 'Cualquier campo');
@@ -1523,8 +1594,13 @@ async function procesarCodigoQR(texto, modo){
 }
 
 function qrCamposRegistro(q){
+  if(q.inv.ne){
+    guardarUnidad(normaEconomico(q.inv.ne), {placas: q.datos.placas, empresa: q.datos.empresa, chofer: q.datos.nombre, area: q.inv.a, tipoPersona: q.inv.tp, unidad: q.inv.u});
+    refrescarDatalistUnidades();
+  }
   return {
-    qrInvitacion: q.inv.id, qrTipo: q.inv.t==='F' ? 'Pase frecuente' : 'Visita agendada', qrVerificado: true,
+    unidad: q.inv.u || undefined,
+    qrInvitacion: q.inv.id, qrTipo: q.inv.ne ? 'Pase de unidad' : (q.inv.t==='F' ? 'Pase frecuente' : 'Visita agendada'), qrVerificado: true,
     qrAnfitrion: q.inv.h || '', qrAlertas: q.alertas || []
   };
 }
@@ -1534,6 +1610,7 @@ function qrPrecargarModal(q){
   set('inNombre', d.nombre); set('inTipoPersona', inv.tp || 'Visitante'); set('inEmpresa', d.empresa);
   if(inv.m && Array.from(document.getElementById('inMotivoVisita').options).some(o=>o.value===inv.m)) set('inMotivoVisita', inv.m);
   else if(inv.m) set('inMotivoVisita', 'Otro');
+  aplicarMotivoModal(); set('inNumEconomico', d.numEconomico);
   set('inAreaVisita', inv.a + (inv.h && inv.a.indexOf(inv.h)===-1 ? (' — autoriza '+inv.h) : ''));
   set('inAcompanantes', d.acompanantes || 0); set('inPlacas', d.placas); set('inTipoID', d.tipoID);
   set('inGafete', document.getElementById('inQRGafete').value.trim());
@@ -1551,7 +1628,7 @@ document.getElementById('btnQRConfirmar').addEventListener('click', async functi
     id: nextId('acceso'),
     campo: document.getElementById('inCampo').value.trim(),
     guardiaConfirma: document.getElementById('inGuardiaConfirma').value.trim(),
-    nombre: d.nombre, tipoPersona: inv.tp || 'Visitante', motivoVisita: motivo,
+    nombre: d.nombre, tipoPersona: inv.tp || 'Visitante', motivoVisita: motivo, numEconomico: motivo===MOTIVO_TRANSPORTE_REGIONAL ? d.numEconomico : '',
     areaVisita: inv.a + (inv.h && inv.a.indexOf(inv.h)===-1 ? (' — autoriza '+inv.h) : ''),
     empresaProcedencia: d.empresa, numAcompanantes: parseInt(d.acompanantes,10) || 0,
     placas: d.placas, gafeteNum: document.getElementById('inQRGafete').value.trim(), tipoID: d.tipoID,

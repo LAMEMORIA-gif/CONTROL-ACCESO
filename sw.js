@@ -3,7 +3,9 @@
 // v9: ahora revisa primero internet (network-first) y sólo usa la copia guardada
 // si no hay conexión — así ya no hace falta borrar datos del sitio cada vez que se actualiza la app.
 // v10: agrega el sistema de QR (visita.html, qr-acceso.js, qrcode.js, jsQR.js) para que también funcione sin conexión.
-const CACHE_NAME = 'control-acceso-cache-v10';
+// v11: N° económico de la unidad para transporte de personal regional.
+// v12: ficha y catálogo de unidades de transporte; pase de unidad permanente con caducidad.
+const CACHE_NAME = 'control-acceso-cache-v12';
 const ASSETS = [
   './',
   './index.html',
