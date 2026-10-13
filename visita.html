@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de visita · Rancho Agrícola La Memoria</title>
+<meta name="theme-color" content="#4f8fd6">
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon-192.png">
+<!-- Formato de prellenado para visitantes: el visitante llena sus datos y genera el QR que mostrará en caseta.
+     Los datos viajan solo dentro del enlace (#...) y del propio QR; no se envían a ningún servidor. -->
+<style>
+:root{
+  --bg:#f4f6f9; --panel:#ffffff; --panel-alt:#f0f3f7; --border:#d6dde7; --text:#152030; --muted:#5d6a7c;
+  --accent:#2f6fb5; --verde:#1f8a3b; --verde-soft:#e4f4e8; --rojo:#c0392b; --rojo-soft:#fbe9e7; --radius:12px;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#10141b; --panel:#1a212c; --panel-alt:#212a37; --border:#2c3444; --text:#e8ecf1; --muted:#8b95a6;
+         --accent:#5a9be0; --verde:#3fb950; --verde-soft:rgba(63,185,80,.14); --rojo:#f0554a; --rojo-soft:rgba(240,85,74,.15); }
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.5;}
+.wrap{max-width:520px;margin:0 auto;padding:18px 16px 48px;}
+header{display:flex;align-items:center;gap:12px;margin-bottom:16px;}
+.mark{width:42px;height:42px;border-radius:10px;background:linear-gradient(160deg,var(--accent),#24507f);display:flex;align-items:center;justify-content:center;flex:none;}
+.mark svg{width:22px;height:22px;}
+h1{font-size:19px;margin:0;line-height:1.2;}
+.sub{color:var(--muted);font-size:13px;}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px;}
+.card h2{font-size:16px;margin:0 0 10px;}
+.dato{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--border);font-size:14px;}
+.dato:last-child{border-bottom:none;}
+.dato span:first-child{color:var(--muted);}
+.dato span:last-child{text-align:right;font-weight:600;}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px;}
+label.req::after{content:' *';color:var(--rojo);}
+input,select{width:100%;font-size:16px;padding:12px;border-radius:9px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);font-family:inherit;}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:0;}
+button{width:100%;font-size:16px;font-weight:600;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:inherit;margin-top:12px;}
+.btn-main{background:var(--accent);color:#fff;}
+.btn-sec{background:transparent;color:var(--text);border:1px solid var(--border);}
+.msg{display:none;padding:10px 12px;border-radius:9px;font-size:14px;margin-top:12px;}
+.msg.err{display:block;background:var(--rojo-soft);color:var(--rojo);}
+.msg.ok{display:block;background:var(--verde-soft);color:var(--verde);}
+.qr-wrap{text-align:center;}
+.qr-wrap canvas{width:100%;max-width:320px;height:auto;border-radius:10px;background:#fff;padding:6px;}
+.pasos{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:14px;}
+.hidden{display:none;}
+.nota{color:var(--muted);font-size:12.5px;margin-top:14px;}
+</style>
+<script src="qrcode.js"></script>
+<script src="qr-acceso.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 5v6c0 5.2 3.4 9.8 8 11 4.6-1.2 8-5.8 8-11V5l-8-3z" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 12.2l2 2 4-4.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div>
+      <h1>Rancho Agrícola La Memoria</h1>
+      <div class="sub">Registro previo de visita · Seguridad Patrimonial</div>
+    </div>
+  </header>
+
+  <div class="card hidden" id="cardError">
+    <h2>No se pudo abrir la invitación</h2>
+    <div id="errorTxt" class="sub">El enlace está incompleto. Pida a la persona que lo invitó que se lo envíe de nuevo.</div>
+  </div>
+
+  <div class="card hidden" id="cardInvitacion">
+    <h2 id="invTitulo">Su invitación</h2>
+    <div id="invDatos"></div>
+  </div>
+
+  <div class="card hidden" id="cardForm">
+    <h2>Sus datos</h2>
+    <div class="sub">Llénelos una sola vez. Al llegar, el guardia solo escanea su código.</div>
+    <form id="form" autocomplete="on">
+      <label class="req" for="fNombre">Nombre completo</label>
+      <input id="fNombre" name="name" autocomplete="name" required>
+      <label for="fEmpresa">Empresa (si aplica)</label>
+      <input id="fEmpresa" name="organization" autocomplete="organization">
+      <label for="fTipoID" class="req">Identificación que presentará</label>
+      <select id="fTipoID" required>
+        <option value="">— Seleccionar —</option>
+        <option value="INE">INE</option>
+        <option value="Licencia">Licencia de conducir</option>
+        <option value="Carnet de empresa">Carnet de empresa</option>
+        <option value="Pasaporte">Pasaporte</option>
+        <option value="Otro">Otra</option>
+      </select>
+      <label for="fPlacas">Placas del vehículo (si llega en vehículo)</label>
+      <input id="fPlacas" autocapitalize="characters" placeholder="Ej. ABC-123-45">
+      <label for="fAcomp">Personas que lo acompañan</label>
+      <input id="fAcomp" type="number" min="0" step="1" value="0" inputmode="numeric">
+      <label for="fTel">Teléfono (opcional)</label>
+      <input id="fTel" type="tel" autocomplete="tel" inputmode="tel">
+      <div class="msg" id="formMsg"></div>
+      <button type="submit" class="btn-main">Generar mi código QR</button>
+    </form>
+  </div>
+
+  <div class="card hidden" id="cardQR">
+    <h2 id="qrTitulo">Su código de acceso</h2>
+    <div class="qr-wrap"><canvas id="qrCanvas"></canvas></div>
+    <ol class="pasos">
+      <li>Guarde esta imagen o tome captura de pantalla.</li>
+      <li>Al llegar a caseta, muestre el código <b>y su identificación oficial</b>.</li>
+      <li>Suba el brillo de su pantalla para que se lea más rápido.</li>
+    </ol>
+    <button type="button" class="btn-main" id="btnDescargar">Descargar imagen del QR</button>
+    <button type="button" class="btn-sec" id="btnCompartir">Compartir / guardar enlace</button>
+    <button type="button" class="btn-sec hidden" id="btnEditar">Corregir mis datos</button>
+    <div class="msg" id="qrMsg"></div>
+  </div>
+
+  <div class="nota">Sus datos solo se usan para registrar su acceso en caseta. No se envían a internet: viajan dentro de este código.</div>
+</div>
+
+<script>
+const QA = window.QRAcceso;
+const STORE_KEY = 'lm_visita_qr_';
+let base = null, inv = null, codigoFinal = null;
+
+function mostrar(id, si){ document.getElementById(id).classList.toggle('hidden', !si); }
+function error(txt){ document.getElementById('errorTxt').textContent = txt; mostrar('cardError', true); }
+function dato(k, v){ return v ? `<div class="dato"><span>${k}</span><span>${QA.esc(v)}</span></div>` : ''; }
+
+function pintarInvitacion(i, visitante){
+  const t = i.t==='F' ? 'Pase de acceso frecuente' : 'Invitación a visita';
+  document.getElementById('invTitulo').textContent = t;
+  let cuando;
+  if(i.t==='F') cuando = 'Del '+QA.fechaLarga(i.fi)+' al '+QA.fechaLarga(i.ff);
+  else cuando = QA.fechaLarga(i.f)+(i.hc?(' · '+i.hc+' h'):'');
+  const horario = (i.t==='F' && (i.hi||i.hf)) ? ((i.hi||'')+' – '+(i.hf||'')) : '';
+  const nombre = (visitante && visitante.n) || i.n;
+  document.getElementById('invDatos').innerHTML =
+    dato('Nombre', nombre) + dato('Empresa', (visitante && visitante.e) || i.e) +
+    dato('Lugar', 'Rancho Agrícola La Memoria'+(i.c?(' — '+i.c):'')) +
+    dato('Visita a', i.a) + dato('Autoriza', i.h) + dato('Motivo', i.m) +
+    dato(i.t==='F'?'Vigencia':'Fecha', cuando) +
+    (i.t==='F' ? dato('Días', QA.textoDias(i.dw)) : '') + dato('Horario', horario);
+  mostrar('cardInvitacion', true);
+}
+
+function mostrarQR(codigo, i, visitante){
+  codigoFinal = codigo;
+  QA.dibujarQR(document.getElementById('qrCanvas'), codigo, 640);
+  document.getElementById('qrTitulo').textContent = i.t==='F' ? 'Su pase de acceso frecuente' : 'Su código de acceso';
+  mostrar('cardQR', true);
+}
+
+function lineasImagen(i, visitante){
+  const nombre = (visitante && visitante.n) || i.n || 'Visitante';
+  return [ 'Rancho Agrícola La Memoria'+(i.c?(' — '+i.c):''), nombre, i.t==='F' ? ('Vigente al '+QA.fechaLarga(i.ff)) : QA.fechaLarga(i.f)+(i.hc?(' · '+i.hc):'') ];
+}
+
+function iniciar(){
+  const h = decodeURIComponent((location.hash||'').slice(1));
+  if(h.indexOf('q=')===0){
+    // pase ya completo (pase frecuente emitido por Seguridad, o QR ya generado)
+    const p = QA.parsearCodigo(h.slice(2));
+    if(p.tipo!=='visita'){ error('Este código no es válido.'); return; }
+    inv = p.invitacion;
+    pintarInvitacion(inv, p.visitante);
+    mostrarQR(h.slice(2), inv, p.visitante);
+    window._visitante = p.visitante;
+    return;
+  }
+  if(h.indexOf('i=')===0){
+    const b = QA.parsearBase(h.slice(2));
+    if(!b){ error('El enlace de invitación está incompleto o dañado.'); return; }
+    base = b.inv+'.'+b.sig; inv = b.invitacion;
+    pintarInvitacion(inv, null);
+    if(inv.t==='U' && inv.f && inv.f < QA.hoyISO()){
+      error('Esta invitación era para el '+QA.fechaLarga(inv.f)+' y ya venció. Pida una nueva a quien lo invitó.');
+      return;
+    }
+    // si ya lo había llenado en este teléfono, muestra su QR directo
+    let guardado = null;
+    try{ guardado = JSON.parse(localStorage.getItem(STORE_KEY+inv.id)||'null'); }catch(e){}
+    if(guardado){
+      window._visitante = guardado;
+      pintarInvitacion(inv, guardado);
+      mostrarQR(QA.codigoCompleto(base, guardado), inv, guardado);
+      mostrar('btnEditar', true);
+      llenarForm(guardado);
+      return;
+    }
+    llenarForm({n: inv.n, e: inv.e, ac: inv.ac});
+    mostrar('cardForm', true);
+    return;
+  }
+  error('Abra el enlace completo que le enviaron por WhatsApp o correo.');
+}
+function llenarForm(v){
+  document.getElementById('fNombre').value = v.n||'';
+  document.getElementById('fEmpresa').value = v.e||'';
+  document.getElementById('fTipoID').value = v.ti||'';
+  document.getElementById('fPlacas').value = v.p||'';
+  document.getElementById('fAcomp').value = v.ac||0;
+  document.getElementById('fTel').value = v.tel||'';
+}
+
+document.getElementById('form').addEventListener('submit', function(e){
+  e.preventDefault();
+  const v = {
+    n: document.getElementById('fNombre').value.trim().replace(/\s+/g,' '),
+    e: document.getElementById('fEmpresa').value.trim(),
+    ti: document.getElementById('fTipoID').value,
+    p: document.getElementById('fPlacas').value.trim().toUpperCase(),
+    ac: parseInt(document.getElementById('fAcomp').value,10)||0,
+    tel: document.getElementById('fTel').value.trim()
+  };
+  const msg = document.getElementById('formMsg');
+  if(v.n.split(' ').length < 2){ msg.textContent = 'Escriba su nombre completo (nombre y apellido).'; msg.className='msg err'; return; }
+  if(!v.ti){ msg.textContent = 'Elija la identificación que presentará en caseta.'; msg.className='msg err'; return; }
+  if(!v.ac) delete v.ac;
+  try{ localStorage.setItem(STORE_KEY+inv.id, JSON.stringify(v)); }catch(err){}
+  window._visitante = v;
+  pintarInvitacion(inv, v);
+  mostrar('cardForm', false);
+  mostrarQR(QA.codigoCompleto(base, v), inv, v);
+  mostrar('btnEditar', true);
+  document.getElementById('cardQR').scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('btnEditar').addEventListener('click', function(){
+  mostrar('cardQR', false); mostrar('cardForm', true);
+  document.getElementById('cardForm').scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('btnDescargar').addEventListener('click', function(){
+  if(!codigoFinal) return;
+  const a = document.createElement('a');
+  a.href = QA.imagenQRConTexto(codigoFinal, lineasImagen(inv, window._visitante));
+  a.download = 'QR_acceso_La_Memoria.png';
+  document.body.appendChild(a); a.click(); a.remove();
+});
+document.getElementById('btnCompartir').addEventListener('click', async function(){
+  if(!codigoFinal) return;
+  const url = location.href.split('#')[0]+'#q='+codigoFinal;
+  const msg = document.getElementById('qrMsg');
+  try{
+    if(navigator.share){ await navigator.share({title:'Mi acceso — Rancho Agrícola La Memoria', url}); return; }
+    await navigator.clipboard.writeText(url);
+    msg.textContent = 'Enlace copiado. Guárdelo para abrir su código cuando llegue.'; msg.className='msg ok';
+  }catch(e){ /* el usuario canceló */ }
+});
+
+window.addEventListener('hashchange', ()=>location.reload());
+iniciar();
+</script>
+</body>
+</html>

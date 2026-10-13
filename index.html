@@ -443,7 +443,26 @@ footer.note b{color:var(--muted);}
 .chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0;}
 .chip button:hover{color:var(--rojo);}
 
+
+/* ---------- QR de visitas ---------- */
+.big-btn.qr{background:linear-gradient(135deg,#4f8fd6,#2c5c8f);color:#fff;}
+.qr-video-wrap{position:relative;background:#000;border-radius:10px;overflow:hidden;aspect-ratio:1/1;max-height:62vh;margin:0 auto;}
+.qr-video-wrap video{width:100%;height:100%;object-fit:cover;display:block;}
+.qr-video-wrap .mira{position:absolute;inset:14%;border:3px solid rgba(255,255,255,.85);border-radius:14px;box-shadow:0 0 0 999px rgba(0,0,0,.25);}
+.qr-res-head{border-radius:10px;padding:14px 16px;margin-bottom:12px;font-weight:700;font-size:18px;}
+.qr-res-head.VERDE{background:var(--verde-soft);color:var(--verde);border:1px solid rgba(63,185,80,.45);}
+.qr-res-head.AMARILLO{background:var(--amarillo-soft);color:var(--amarillo);border:1px solid rgba(227,179,65,.45);}
+.qr-res-head.ROJO{background:var(--rojo-soft);color:var(--rojo);border:1px solid rgba(240,85,74,.45);}
+.qr-res-head small{display:block;font-weight:400;font-size:12.5px;margin-top:3px;color:var(--text);opacity:.85;}
+.qr-dato{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--border-soft);font-size:13.5px;}
+.qr-dato span:first-child{color:var(--muted);}
+.qr-dato span:last-child{text-align:right;font-weight:600;}
+.qr-problemas{margin:10px 0 0;padding-left:18px;color:var(--amarillo);font-size:13px;}
+.qr-problemas.grave{color:var(--rojo);}
+.qr-oculto{display:none !important;}
 </style>
+<script src="qr-acceso.js"></script>
+<script src="jsQR.js" defer></script>
 </head>
 <body>
 <div class="wrap" style="max-width:720px;">
@@ -507,11 +526,38 @@ footer.note b{color:var(--muted);}
     </div>
   </div>
 
+  <div class="add-panel" id="panelQRConfig">
+    <div class="add-panel-head" id="panelQRConfigHead">
+      <h2>🔑 QR de visitas</h2>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span class="hint" id="qrConfigHint">sin configurar</span>
+        <span class="chev">▾</span>
+      </div>
+    </div>
+    <div class="add-panel-body">
+      <div style="padding:16px 18px;">
+        <div style="color:var(--muted);font-size:12.5px;margin-bottom:12px;">
+          Para leer los QR de visitas y pases, esta caseta necesita la misma clave que usa el panel de supervisión.
+          Pida al supervisor el "QR de configuración" (panel → Invitaciones y pases QR) y escanéelo aquí una sola vez.
+        </div>
+        <button type="button" class="btn-primary" id="btnQRConfigEscanear" style="width:100%;">📷 Escanear QR de configuración</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <input type="text" id="inQRClave" placeholder="…o escriba la clave" autocomplete="off" style="flex:1;min-width:160px;background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);">
+          <button type="button" class="btn-secondary" id="btnQRClaveGuardar">Guardar</button>
+        </div>
+        <div class="form-msg" id="qrConfigMsg" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="kpis" id="kpisRow"></div>
 
   <button type="button" class="big-btn" id="btnCapturaRapida" style="background:linear-gradient(135deg,#e08a4b,#c96f2e);color:#fff;">📷 Captura rápida de identificación (hora pico)</button>
   <div style="color:var(--muted);font-size:11.5px;margin-top:6px;text-align:center;">Solo toma la foto y guárdela — complete el resto del registro después, cuando baje la afluencia</div>
   <input type="file" id="inputCapturaRapida" accept="image/*" capture="environment" style="display:none;">
+
+  <button type="button" class="big-btn qr" id="btnEscanearQR" style="margin-top:14px;">📲 Escanear QR de visita / proveedor</button>
+  <div style="color:var(--muted);font-size:11.5px;margin-top:6px;text-align:center;">Para visitas agendadas y proveedores con pase frecuente — verifica y registra en segundos</div>
 
   <button type="button" class="big-btn entrada" id="btnNuevoIngreso" style="margin-top:14px;">➕ Registrar nuevo ingreso (completo)</button>
   <div class="form-msg" id="setupMsg" style="margin-top:10px;"></div>
@@ -576,6 +622,7 @@ footer.note b{color:var(--muted);}
             <option value="Entrega de material">Entrega de material</option>
             <option value="Mantenimiento">Mantenimiento</option>
             <option value="Reunión">Reunión</option>
+            <option value="Transporte de personal regional">Transporte de personal regional</option>
             <option value="Otro">Otro</option>
           </select>
         </div>
@@ -626,6 +673,44 @@ footer.note b{color:var(--muted);}
           <button type="button" class="btn-secondary" id="btnCancelarIngreso" style="flex:1;">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: escáner QR ===================== -->
+  <div class="modal-overlay" id="modalEscaner">
+    <div class="modal-box" style="max-width:460px;">
+      <h3 id="escanerTitulo">📲 Escanear QR</h3>
+      <div class="modal-sub" id="escanerSub">Apunte la cámara al código. Se lee solo.</div>
+      <div class="qr-video-wrap" id="escanerVideoWrap"><video id="escanerVideo" playsinline muted></video><div class="mira"></div></div>
+      <div class="form-msg" id="escanerMsg" style="margin-top:10px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+        <label class="btn-secondary" for="inQRFoto" style="flex:1;text-align:center;cursor:pointer;">🖼️ Leer desde foto</label>
+        <button type="button" class="btn-secondary" id="btnEscanerManual" style="flex:1;">⌨️ Pegar código</button>
+        <button type="button" class="btn-secondary" id="btnEscanerCerrar" style="flex:1;">Cancelar</button>
+      </div>
+      <input type="file" id="inQRFoto" accept="image/*" capture="environment" style="display:none;">
+      <div id="escanerManualBox" class="qr-oculto" style="margin-top:10px;">
+        <textarea id="inQRManual" placeholder="Pegue aquí el código (empieza con LMACC1…)" style="width:100%;min-height:70px;background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px 12px;color:var(--text);"></textarea>
+        <button type="button" class="btn-primary" id="btnEscanerManualOk" style="width:100%;margin-top:6px;">Verificar código</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL: resultado de verificación QR ===================== -->
+  <div class="modal-overlay" id="modalQRResultado">
+    <div class="modal-box" style="max-width:460px;">
+      <div class="qr-res-head" id="qrResHead">—</div>
+      <div id="qrResDatos"></div>
+      <ul class="qr-problemas" id="qrResProblemas"></ul>
+      <div class="field-inline" id="qrResGafeteBox" style="margin-top:12px;">
+        <label>N° de gafete entregado (si aplica)</label>
+        <input type="text" id="inQRGafete" placeholder="Ej. 014">
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        <button type="button" class="big-btn entrada" id="btnQRConfirmar" style="margin:0;">✅ Confirmar ingreso</button>
+        <button type="button" class="btn-secondary" id="btnQRCompletar">📝 Agregar foto de identificación / revisar datos</button>
+        <button type="button" class="btn-secondary" id="btnQRCancelar">Cancelar — no registrar</button>
+      </div>
     </div>
   </div>
 
@@ -757,6 +842,7 @@ let ALL_ACCESOS = [];
 let ALL_PENDIENTES = [];
 let modalFotoIDData = null;
 let pendienteEnCurso = null;
+let qrEnCurso = null; // datos del QR verificado cuando el guardia abre el registro completo desde un escaneo
 
 function sum(arr){ return arr.reduce((a,b)=>a+b,0); }
 function avg(arr){ return arr.length ? sum(arr)/arr.length : 0; }
@@ -773,7 +859,7 @@ function renderKpis(){
 
   let subDentro = 'en esta caseta';
   if(restringidosDentro.length>0) subDentro = '🚫 '+restringidosDentro.length+' en lista restringida';
-  else if(excedidos.length>0) subDentro = '⏰ '+excedidos.length+' con tiempo excedido (>'+UMBRAL_HORAS_EXCEDIDO+'h)';
+  else if(excedidos.length>0) subDentro = '⏰ '+excedidos.length+' con tiempo excedido';
 
   document.getElementById('kpisRow').innerHTML = `
     <div class="kpi semaforo"><div class="kpi-accentbar"></div>
@@ -784,7 +870,7 @@ function renderKpis(){
     <div class="kpi"><div class="kpi-accentbar"></div>
       <div class="label">Registros de hoy</div>
       <div class="value">${hoyRegistros.length}</div>
-      <div class="sub">ingresos registrados</div>
+      <div class="sub">ingresos registrados${hoyRegistros.filter(a=>a.qrVerificado).length?(' · 📲 '+hoyRegistros.filter(a=>a.qrVerificado).length+' con QR'):''}</div>
     </div>
     <div class="kpi"><div class="kpi-accentbar"></div>
       <div class="label">Duración promedio</div>
@@ -806,7 +892,11 @@ function renderKpis(){
 
 // ---------- lista de "actualmente dentro" ----------
 const UMBRAL_HORAS_EXCEDIDO = 4; // horas dentro sin salida a partir de las cuales se marca como excedido
-function estaExcedido(a){ return !a.horaSalida && (Date.now()-a.horaIngreso) > UMBRAL_HORAS_EXCEDIDO*3600000; }
+// El transporte de personal regional permanece más tiempo dentro de la instalación: tiene su propio umbral
+const MOTIVO_TRANSPORTE_REGIONAL = 'Transporte de personal regional';
+const UMBRAL_HORAS_TRANSPORTE_REGIONAL = 12;
+function umbralHoras(a){ return (a && a.motivoVisita===MOTIVO_TRANSPORTE_REGIONAL) ? UMBRAL_HORAS_TRANSPORTE_REGIONAL : UMBRAL_HORAS_EXCEDIDO; }
+function estaExcedido(a){ return !a.horaSalida && (Date.now()-a.horaIngreso) > umbralHoras(a)*3600000; }
 
 function renderDentroList(){
   const cont = document.getElementById('dentroList');
@@ -822,7 +912,7 @@ function renderDentroList(){
     <div class="visitante-card" style="${(excedido||restringido)?'border-left-color:var(--rojo);background:var(--rojo-soft);':''}">
       ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
       <div class="v-body">
-        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span>${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ TIEMPO EXCEDIDO</span>':''}</div>
+        <div class="v-name">${a.nombre} <span style="color:var(--muted);font-weight:400;">— ${a.tipoPersona}</span>${a.qrVerificado?' <span class="status-pill" style="color:var(--accent);background:rgba(79,143,214,.16);">📲 QR</span>':''}${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ TIEMPO EXCEDIDO</span>':''}</div>
         <div class="v-meta">
           📅 ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)} (lleva ${fmtDuracion(a.horaIngreso, null)}) · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}
           ${a.empresaProcedencia ? ' · '+a.empresaProcedencia : ''}
@@ -871,7 +961,7 @@ function renderHistorial(){
       <div style="display:flex;gap:12px;align-items:center;">
         ${a.fotoID ? `<img class="v-thumb" src="${a.fotoID}">` : `<div class="v-thumb-empty">👤</div>`}
         <div>
-          <div class="h-main">${a.nombre} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
+          <div class="h-main">${a.nombre}${a.qrVerificado?' <span class="status-pill" style="color:var(--accent);background:rgba(79,143,214,.16);">📲 QR</span>':''} <span class="status-pill ${estado}">${estado==='DENTRO'?'DENTRO':'SALIÓ'}</span>${restringido?' <span class="status-pill RESTRINGIDO">🚫 LISTA RESTRINGIDA</span>':''}${excedido?' <span class="status-pill" style="color:var(--rojo);background:rgba(240,85,74,.16);">⏰ EXCEDIDO</span>':''}</div>
           <div class="h-sub">${a.campo} · ${a.tipoPersona} · Motivo: ${a.motivoVisita||'—'} · Visita: ${a.areaVisita}${a.empresaProcedencia?(' · '+a.empresaProcedencia):''}${a.numAcompanantes>0?(' · +'+a.numAcompanantes+' acompañante'+(a.numAcompanantes===1?'':'s')):''}</div>
           <div class="h-sub">📅 Fecha: ${fmtFecha(a.horaIngreso)} · 🕐 Entrada: ${fmtHora(a.horaIngreso)}${a.horaSalida ? (' · 🕐 Salida: '+fmtHora(a.horaSalida)+' · ⏱ Permanencia: '+fmtDuracion(a.horaIngreso,a.horaSalida)) : ' · 🕐 Salida: — (aún dentro)'}</div>
         </div>
@@ -1026,7 +1116,7 @@ function revisarExcedidosYNotificar(){
     if(!notificadosExcedido.has(a.id)){
       notificadosExcedido.add(a.id);
       if('Notification' in window && Notification.permission==='granted'){
-        try{ new Notification('Control de Acceso', {body: a.nombre+' lleva más de '+UMBRAL_HORAS_EXCEDIDO+'h dentro sin registrar salida.'}); }catch(e){}
+        try{ new Notification('Control de Acceso', {body: a.nombre+' lleva más de '+umbralHoras(a)+'h dentro sin registrar salida.'}); }catch(e){}
       }
       if(navigator.vibrate){ try{ navigator.vibrate([200,100,200]); }catch(e){} }
     }
@@ -1063,6 +1153,7 @@ document.getElementById('btnNuevoIngreso').addEventListener('click', function(){
   }
   msgEl.className = 'form-msg';
   pendienteEnCurso = null;
+  qrEnCurso = null;
   document.getElementById('modalIngresoSub').textContent = campo+' · confirma: '+guardia;
   document.getElementById('formIngreso').reset();
   modalFotoIDData = null;
@@ -1074,6 +1165,7 @@ document.getElementById('btnNuevoIngreso').addEventListener('click', function(){
 });
 document.getElementById('btnCancelarIngreso').addEventListener('click', function(){
   modalIngreso.classList.remove('open');
+  qrEnCurso = null;
 });
 modalIngreso.addEventListener('click', function(e){ if(e.target===modalIngreso) modalIngreso.classList.remove('open'); });
 
@@ -1153,6 +1245,7 @@ document.getElementById('pendientesList').addEventListener('click', async functi
     const pendiente = ALL_PENDIENTES.find(p=>p.id===btnComp.getAttribute('data-id'));
     if(!pendiente) return;
     pendienteEnCurso = pendiente.id;
+    qrEnCurso = null;
     document.getElementById('modalIngresoSub').textContent = campo+' · confirma: '+guardia+' · completando foto de '+fmtHora(pendiente.ts);
     document.getElementById('formIngreso').reset();
     modalFotoIDData = pendiente.foto;
@@ -1208,7 +1301,9 @@ document.getElementById('formIngreso').addEventListener('submit', async function
     horaIngreso: pendienteEnCurso ? ((ALL_PENDIENTES.find(p=>p.id===pendienteEnCurso)||{}).ts || Date.now()) : Date.now(),
     horaSalida: null
   };
+  if(qrEnCurso){ Object.assign(acceso, qrCamposRegistro(qrEnCurso)); }
   await dbSaveAcceso(acceso);
+  if(qrEnCurso){ qrMarcarUsado(qrEnCurso); qrEnCurso = null; }
   if(pendienteEnCurso){
     await dbDeletePendiente(pendienteEnCurso);
     pendienteEnCurso = null;
@@ -1239,6 +1334,256 @@ document.getElementById('btnExportarTodo').addEventListener('click', function(){
   a.href = url; a.download = 'control_acceso_'+campoArchivo+'_'+fecha+'_'+hora+'.json';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
+});
+
+// =====================================================================
+// ---------- QR de visitas agendadas y pases frecuentes ----------
+// =====================================================================
+const QA = window.QRAcceso;
+const QR_USADOS_KEY = 'control_acceso_qr_usados_v1';
+function qrLoadUsados(){ try{ const d = JSON.parse(localStorage.getItem(QR_USADOS_KEY)||'{}'); return (d && typeof d==='object' && !Array.isArray(d)) ? d : {}; }catch(e){ return {}; } }
+function qrSaveUsados(o){ try{ localStorage.setItem(QR_USADOS_KEY, JSON.stringify(o)); }catch(e){} }
+function qrMarcarUsado(q){ if(q && q.inv && q.inv.t==='U'){ const u = qrLoadUsados(); u[q.inv.id] = Date.now(); qrSaveUsados(u); } }
+function qrSetMsg(id, txt, tipo){ const el = document.getElementById(id); el.textContent = txt; el.className = 'form-msg'+(tipo?(' '+tipo):''); }
+
+// --- configuración de la clave ---
+function qrRefrescarConfig(){
+  const c = QA.leerClave();
+  document.getElementById('qrConfigHint').textContent = c ? '✅ configurado' : '⚠ sin configurar';
+}
+document.getElementById('panelQRConfigHead').addEventListener('click', ()=>document.getElementById('panelQRConfig').classList.toggle('open'));
+document.getElementById('btnQRClaveGuardar').addEventListener('click', function(){
+  const c = document.getElementById('inQRClave').value.trim();
+  if(c.length < 8){ qrSetMsg('qrConfigMsg', 'La clave debe tener al menos 8 caracteres.', 'err'); return; }
+  QA.guardarClave(c); document.getElementById('inQRClave').value = '';
+  qrSetMsg('qrConfigMsg', 'Clave guardada. Esta caseta ya puede verificar QR de visitas.', 'ok'); qrRefrescarConfig();
+});
+document.getElementById('btnQRConfigEscanear').addEventListener('click', ()=>abrirEscaner('clave'));
+qrRefrescarConfig();
+
+// --- escáner (cámara con BarcodeDetector nativo, o jsQR como respaldo; sin internet) ---
+const modalEscaner = document.getElementById('modalEscaner');
+let escStream = null, escModo = 'visita', escActivo = false, escDetector = null, escCanvas = null;
+async function abrirEscaner(modo){
+  escModo = modo;
+  if(modo==='visita'){
+    const guardia = document.getElementById('inGuardiaConfirma').value.trim();
+    const campo = document.getElementById('inCampo').value.trim();
+    if(!guardia || !campo){ qrSetMsg('setupMsg', 'Escriba el nombre de quien confirma el ingreso y el Área/Campo antes de escanear.', 'err'); return; }
+    if(!QA.leerClave()){
+      qrSetMsg('setupMsg', 'Esta caseta aún no tiene la clave de QR. Abra "🔑 QR de visitas" y escanee el QR de configuración que le dé el supervisor.', 'err');
+      document.getElementById('panelQRConfig').classList.add('open'); return;
+    }
+  }
+  document.getElementById('escanerTitulo').textContent = modo==='clave' ? '🔑 Escanear QR de configuración' : '📲 Escanear QR de visita / proveedor';
+  document.getElementById('escanerMsg').className = 'form-msg';
+  document.getElementById('escanerManualBox').classList.add('qr-oculto');
+  document.getElementById('inQRManual').value = '';
+  modalEscaner.classList.add('open');
+  escActivo = true;
+  try{
+    if('BarcodeDetector' in window){
+      try{ const f = await BarcodeDetector.getSupportedFormats(); if(f.includes('qr_code')) escDetector = new BarcodeDetector({formats:['qr_code']}); }catch(e){ escDetector = null; }
+    }
+    escStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:1280}}, audio:false});
+    const video = document.getElementById('escanerVideo');
+    video.srcObject = escStream; await video.play();
+    escLoop();
+  }catch(err){
+    qrSetMsg('escanerMsg', 'No se pudo abrir la cámara ('+(err && err.name || 'error')+'). Use "Leer desde foto" o "Pegar código".', 'err');
+  }
+}
+function cerrarEscaner(){
+  escActivo = false;
+  if(escStream){ escStream.getTracks().forEach(t=>t.stop()); escStream = null; }
+  modalEscaner.classList.remove('open');
+}
+async function decodificarFuente(fuente, w, h){
+  if(escDetector){
+    try{ const r = await escDetector.detect(fuente); if(r && r.length) return r[0].rawValue; }catch(e){}
+  }
+  if(typeof jsQR === 'function'){
+    escCanvas = escCanvas || document.createElement('canvas');
+    const escala = Math.min(1, 900/Math.max(w,h));
+    escCanvas.width = Math.round(w*escala); escCanvas.height = Math.round(h*escala);
+    const ctx = escCanvas.getContext('2d', {willReadFrequently:true});
+    ctx.drawImage(fuente, 0, 0, escCanvas.width, escCanvas.height);
+    const img = ctx.getImageData(0,0,escCanvas.width,escCanvas.height);
+    const r = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+    if(r && r.data) return r.data;
+  }
+  return null;
+}
+async function escLoop(){
+  const video = document.getElementById('escanerVideo');
+  while(escActivo){
+    if(video.readyState >= 2 && video.videoWidth){
+      const txt = await decodificarFuente(video, video.videoWidth, video.videoHeight);
+      if(txt && escActivo){ if(navigator.vibrate){ try{ navigator.vibrate(80); }catch(e){} } cerrarEscaner(); procesarCodigoQR(txt, escModo); return; }
+    }
+    await new Promise(r=>setTimeout(r, 220));
+  }
+}
+document.getElementById('btnEscanearQR').addEventListener('click', ()=>abrirEscaner('visita'));
+document.getElementById('btnEscanerCerrar').addEventListener('click', cerrarEscaner);
+document.getElementById('btnEscanerManual').addEventListener('click', ()=>document.getElementById('escanerManualBox').classList.toggle('qr-oculto'));
+document.getElementById('btnEscanerManualOk').addEventListener('click', function(){
+  const txt = document.getElementById('inQRManual').value.trim();
+  if(!txt) return;
+  const modo = escModo; cerrarEscaner(); procesarCodigoQR(txt, modo);
+});
+document.getElementById('inQRFoto').addEventListener('change', async function(e){
+  const file = e.target.files[0]; e.target.value = '';
+  if(!file) return;
+  qrSetMsg('escanerMsg', 'Leyendo foto…', 'ok');
+  try{
+    const bmp = await createImageBitmap(file);
+    const txt = await decodificarFuente(bmp, bmp.width, bmp.height);
+    if(!txt){ qrSetMsg('escanerMsg', 'No se encontró un código QR en la foto. Tómela más cerca y sin reflejos.', 'err'); return; }
+    const modo = escModo; cerrarEscaner(); procesarCodigoQR(txt, modo);
+  }catch(err){ qrSetMsg('escanerMsg', 'No se pudo leer la foto.', 'err'); }
+});
+
+// --- verificación ---
+const modalQRRes = document.getElementById('modalQRResultado');
+let qrVerificado = null; // {inv, vis, datos, problemas, graves}
+function qrDato(k, v){ return v ? `<div class="qr-dato"><span>${k}</span><span>${QA.esc(v)}</span></div>` : ''; }
+function qrMostrarResultado(nivel, titulo, subtitulo, datosHtml, problemas, graves, permitirRegistro){
+  const head = document.getElementById('qrResHead');
+  head.className = 'qr-res-head '+nivel;
+  head.innerHTML = QA.esc(titulo)+(subtitulo?('<small>'+QA.esc(subtitulo)+'</small>'):'');
+  document.getElementById('qrResDatos').innerHTML = datosHtml || '';
+  const ul = document.getElementById('qrResProblemas');
+  ul.className = 'qr-problemas'+(graves && graves.length ? ' grave' : '');
+  ul.innerHTML = (graves||[]).concat(problemas||[]).map(p=>'<li>'+QA.esc(p)+'</li>').join('');
+  const btn = document.getElementById('btnQRConfirmar');
+  btn.classList.toggle('qr-oculto', !permitirRegistro);
+  document.getElementById('btnQRCompletar').classList.toggle('qr-oculto', !permitirRegistro);
+  document.getElementById('qrResGafeteBox').classList.toggle('qr-oculto', !permitirRegistro);
+  btn.textContent = nivel==='VERDE' ? '✅ Confirmar ingreso' : '⚠ Registrar de todos modos';
+  btn.style.background = nivel==='VERDE' ? '' : 'linear-gradient(135deg,#e3b341,#b8891f)';
+  document.getElementById('inQRGafete').value = '';
+  modalQRRes.classList.add('open');
+  if(navigator.vibrate){ try{ navigator.vibrate(nivel==='VERDE'?[60]:[150,80,150,80,150]); }catch(e){} }
+}
+async function procesarCodigoQR(texto, modo){
+  const p = QA.parsearCodigo(texto);
+  if(p.tipo==='clave'){
+    if(!p.clave || p.clave.length < 8){ qrSetMsg('setupMsg', 'El QR de configuración no es válido.', 'err'); return; }
+    const actual = QA.leerClave();
+    if(actual && actual!==p.clave && !confirm('Esta caseta ya tenía una clave distinta. Si la cambia, los QR firmados con la clave anterior dejarán de valer aquí. ¿Usar la clave nueva?')) return;
+    QA.guardarClave(p.clave); qrRefrescarConfig();
+    document.getElementById('panelQRConfig').classList.add('open');
+    qrSetMsg('qrConfigMsg', '✅ Caseta configurada. Ya puede escanear QR de visitas y pases.', 'ok');
+    return;
+  }
+  if(modo==='clave'){ qrSetMsg('qrConfigMsg', 'Ese no es un QR de configuración. Pida al supervisor el "QR de configuración" del panel.', 'err'); document.getElementById('panelQRConfig').classList.add('open'); return; }
+  if(p.tipo!=='visita'){
+    qrMostrarResultado('ROJO', '❌ QR no reconocido', 'No es un código de Control de Acceso de La Memoria. Haga el registro manual.', '', [], [], false);
+    return;
+  }
+  let firmaOk = false;
+  try{ firmaOk = await QA.verificarFirma(QA.leerClave(), p.inv, p.sig); }catch(e){ firmaOk = false; }
+  const inv = p.invitacion || {}, vis = p.visitante || {};
+  if(!firmaOk){
+    qrMostrarResultado('ROJO', '❌ QR NO VÁLIDO', 'La firma no coincide: el código fue alterado o se hizo con otra clave. No lo acepte; haga el registro manual y avise al supervisor.',
+      qrDato('Nombre en el código', vis.n || inv.n), [], [], false);
+    return;
+  }
+  const datos = {
+    nombre: (vis.n || inv.n || '').trim(), empresa: vis.e || inv.e || '', placas: vis.p || inv.p || '', tipoID: vis.ti || inv.ti || '',
+    acompanantes: (vis.ac!=null ? vis.ac : inv.ac) || 0, telefono: vis.tel || ''
+  };
+  const campo = document.getElementById('inCampo').value.trim();
+  const problemas = QA.revisarVigencia(inv, campo);
+  const graves = [];
+  if(!datos.nombre) graves.push('El código no trae nombre del visitante: pida que llene el formato o registre manualmente.');
+  if(inv.n && vis.n && QA.normaliza(inv.n)!==QA.normaliza(vis.n)) problemas.push('El nombre que llenó el visitante ("'+vis.n+'") no coincide con el de la invitación ("'+inv.n+'"). Revise la identificación.');
+  if(inv.t==='U'){
+    const usado = qrLoadUsados()[inv.id];
+    if(usado) graves.push('Este QR de visita ya se usó el '+fmtFecha(usado)+' a las '+fmtHora(usado)+' — es de un solo uso.');
+  }
+  if(ALL_ACCESOS.some(a=>!a.horaSalida && a.qrInvitacion===inv.id)) graves.push('Con este mismo QR ya hay alguien registrado como "dentro" en esta caseta.');
+  const restr = buscarEnRestringidos(datos.nombre, datos.placas);
+  if(restr) graves.push('🚫 '+(restr.tipo==='placa'?'Las placas':'El nombre')+' está en la LISTA DE ACCESO RESTRINGIDO'+(restr.motivo?(' — '+restr.motivo):'')+'.');
+
+  const tipoTxt = inv.t==='F' ? 'Pase frecuente' : 'Visita agendada';
+  let vigTxt = inv.t==='F' ? ('al '+QA.fechaLarga(inv.ff)+' · '+QA.textoDias(inv.dw)) : (QA.fechaLarga(inv.f)+(inv.hc?(' · cita '+inv.hc):''));
+  if(inv.hi || inv.hf) vigTxt += ' · '+(inv.hi||'')+'–'+(inv.hf||'');
+  const html = qrDato('Nombre', datos.nombre) + qrDato('Empresa', datos.empresa) + qrDato('Tipo', inv.tp) +
+    qrDato('Visita a', inv.a) + qrDato('Autoriza', inv.h) + qrDato('Motivo', inv.m) +
+    qrDato('Placas', datos.placas) + qrDato('Identificación', datos.tipoID ? (datos.tipoID+' — verifíquela') : 'Pida identificación oficial') +
+    qrDato('Acompañantes', datos.acompanantes ? String(datos.acompanantes) : '') +
+    qrDato(inv.t==='F'?'Vigencia':'Fecha', vigTxt) + qrDato('Campo', inv.c || 'Cualquier campo');
+  qrVerificado = {inv, vis, datos, alertas: graves.concat(problemas)};
+  const nivel = graves.length ? 'ROJO' : (problemas.length ? 'AMARILLO' : 'VERDE');
+  const titulo = nivel==='VERDE' ? '✅ '+tipoTxt.toUpperCase()+(inv.t==='F'?' VERIFICADO':' VERIFICADA') : (nivel==='AMARILLO' ? '⚠ '+tipoTxt+' con observaciones' : '⛔ '+tipoTxt+' — revise antes de dejar pasar');
+  const sub = nivel==='VERDE' ? 'Firma válida. Compare el nombre con la identificación oficial y confirme.' : 'La firma es válida, pero hay puntos por revisar. Usted decide si registra el ingreso.';
+  qrMostrarResultado(nivel, titulo, sub, html, problemas, graves, !!datos.nombre);
+}
+
+function qrCamposRegistro(q){
+  return {
+    qrInvitacion: q.inv.id, qrTipo: q.inv.t==='F' ? 'Pase frecuente' : 'Visita agendada', qrVerificado: true,
+    qrAnfitrion: q.inv.h || '', qrAlertas: q.alertas || []
+  };
+}
+function qrPrecargarModal(q){
+  const d = q.datos, inv = q.inv;
+  const set = (id, v)=>{ const el = document.getElementById(id); if(el && v!=null && v!=='') el.value = v; };
+  set('inNombre', d.nombre); set('inTipoPersona', inv.tp || 'Visitante'); set('inEmpresa', d.empresa);
+  if(inv.m && Array.from(document.getElementById('inMotivoVisita').options).some(o=>o.value===inv.m)) set('inMotivoVisita', inv.m);
+  else if(inv.m) set('inMotivoVisita', 'Otro');
+  set('inAreaVisita', inv.a + (inv.h && inv.a.indexOf(inv.h)===-1 ? (' — autoriza '+inv.h) : ''));
+  set('inAcompanantes', d.acompanantes || 0); set('inPlacas', d.placas); set('inTipoID', d.tipoID);
+  set('inGafete', document.getElementById('inQRGafete').value.trim());
+  const nota = (inv.t==='F'?'Pase frecuente QR':'Visita agendada QR')+(d.telefono?(' · tel. '+d.telefono):'')+(q.alertas.length?(' · Observaciones: '+q.alertas.join(' / ')):'');
+  set('inNotaIngreso', nota);
+}
+document.getElementById('btnQRCancelar').addEventListener('click', ()=>{ modalQRRes.classList.remove('open'); qrVerificado = null; });
+document.getElementById('btnQRConfirmar').addEventListener('click', async function(){
+  const q = qrVerificado; if(!q) return;
+  if(q.alertas.length && !confirm('Este QR tiene observaciones:\n\n• '+q.alertas.join('\n• ')+'\n\n¿Registrar el ingreso de todos modos?')) return;
+  const d = q.datos, inv = q.inv;
+  let motivo = inv.m || 'Otro';
+  if(!Array.from(document.getElementById('inMotivoVisita').options).some(o=>o.value===motivo)) motivo = 'Otro';
+  const acceso = Object.assign({
+    id: nextId('acceso'),
+    campo: document.getElementById('inCampo').value.trim(),
+    guardiaConfirma: document.getElementById('inGuardiaConfirma').value.trim(),
+    nombre: d.nombre, tipoPersona: inv.tp || 'Visitante', motivoVisita: motivo,
+    areaVisita: inv.a + (inv.h && inv.a.indexOf(inv.h)===-1 ? (' — autoriza '+inv.h) : ''),
+    empresaProcedencia: d.empresa, numAcompanantes: parseInt(d.acompanantes,10) || 0,
+    placas: d.placas, gafeteNum: document.getElementById('inQRGafete').value.trim(), tipoID: d.tipoID,
+    fotoID: null,
+    nota: (inv.t==='F'?'Pase frecuente QR':'Visita agendada QR')+(d.telefono?(' · tel. '+d.telefono):'')+(q.alertas.length?(' · Observaciones: '+q.alertas.join(' / ')):''),
+    horaIngreso: Date.now(), horaSalida: null
+  }, qrCamposRegistro(q));
+  await dbSaveAcceso(acceso);
+  qrMarcarUsado(q);
+  modalQRRes.classList.remove('open'); qrVerificado = null;
+  await cargarYRenderizar();
+  qrSetMsg('setupMsg', '📲 Ingreso con QR registrado: '+acceso.nombre+' — '+fmtHora(acceso.horaIngreso)+'.', 'ok');
+});
+document.getElementById('btnQRCompletar').addEventListener('click', function(){
+  const q = qrVerificado; if(!q) return;
+  modalQRRes.classList.remove('open');
+  const guardia = document.getElementById('inGuardiaConfirma').value.trim();
+  const campo = document.getElementById('inCampo').value.trim();
+  pendienteEnCurso = null;
+  document.getElementById('formIngreso').reset();
+  modalFotoIDData = null;
+  document.getElementById('fotoIDPreview').style.display = 'none';
+  document.getElementById('formIngresoMsg').className = 'form-msg';
+  document.getElementById('alertaRestringidoModal').style.display = 'none';
+  qrPrecargarModal(q);
+  qrEnCurso = q; qrVerificado = null;
+  document.getElementById('modalIngresoSub').textContent = campo+' · confirma: '+guardia+' · 📲 datos del QR';
+  const aviso = document.getElementById('avisoAutocompletoModal');
+  aviso.textContent = '📲 Datos cargados desde el QR verificado. Tome la foto de la identificación y registre.';
+  aviso.style.display = 'block';
+  verificarListaRestringidaEnModal();
+  modalIngreso.classList.add('open');
 });
 
 cargarYRenderizar();

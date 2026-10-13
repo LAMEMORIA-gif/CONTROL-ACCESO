@@ -2,11 +2,16 @@
 // después de haberla visitado al menos una vez con conexión.
 // v9: ahora revisa primero internet (network-first) y sólo usa la copia guardada
 // si no hay conexión — así ya no hace falta borrar datos del sitio cada vez que se actualiza la app.
-const CACHE_NAME = 'control-acceso-cache-v9';
+// v10: agrega el sistema de QR (visita.html, qr-acceso.js, qrcode.js, jsQR.js) para que también funcione sin conexión.
+const CACHE_NAME = 'control-acceso-cache-v10';
 const ASSETS = [
   './',
   './index.html',
   './panel.html',
+  './visita.html',
+  './qr-acceso.js',
+  './qrcode.js',
+  './jsQR.js',
   './manifest.json',
   './panel-manifest.json',
   './icon-192.png',
