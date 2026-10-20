@@ -1,0 +1,6 @@
+Librerías de terceros incluidas en esta carpeta:
+
+- pdf-lib 1.17.1 (pdf-lib.min.js) — MIT License, Copyright (c) 2019 Andrew Dillon. https://github.com/Hopding/pdf-lib
+- JSZip 3.10.1 (jszip.min.js) — MIT License, Copyright (c) 2009-2016 Stuart Knightley. https://github.com/Stuk/jszip
+
+RE-PL-164.pdf y logo.png son el formato oficial de Inocuidad del rancho.

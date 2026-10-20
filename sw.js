@@ -5,7 +5,9 @@
 // v10: agrega el sistema de QR (visita.html, qr-acceso.js, qrcode.js, jsQR.js) para que también funcione sin conexión.
 // v11: N° económico de la unidad para transporte de personal regional.
 // v12: ficha y catálogo de unidades de transporte; pase de unidad permanente con caducidad.
-const CACHE_NAME = 'control-acceso-cache-v12';
+// v13: formato de Inocuidad RE-PL-164 (PDF y Excel) en el panel.
+// v14: el archivo exportado lleva campo, días de captura y hora con segundos (ya no se reemplazan en la carpeta).
+const CACHE_NAME = 'control-acceso-cache-v14';
 const ASSETS = [
   './',
   './index.html',
@@ -21,7 +23,12 @@ const ASSETS = [
   './apple-touch-icon.png',
   './panel-icon-192.png',
   './panel-icon-512.png',
-  './panel-apple-touch-icon.png'
+  './panel-apple-touch-icon.png',
+  './inocuidad/re-pl-164.js',
+  './inocuidad/RE-PL-164.pdf',
+  './inocuidad/logo.png',
+  './inocuidad/pdf-lib.min.js',
+  './inocuidad/jszip.min.js'
 ];
 
 self.addEventListener('install', function(event){

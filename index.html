@@ -1384,10 +1384,14 @@ document.getElementById('btnExportarTodo').addEventListener('click', function(){
   const blob = new Blob([JSON.stringify(ALL_ACCESOS, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  // Nombre único por campo, fecha y hora local, para que en el panel no se reemplacen archivos de distintos campos
+  // Nombre único: campo, días de captura que contiene (del primero al último registro) y hora exacta de exportación
+  // con segundos, para que al guardar varios archivos en una misma carpeta nunca se reemplace uno por otro.
   const d = new Date(); const p2 = n => String(n).padStart(2,'0');
-  const fecha = d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
-  const hora = p2(d.getHours())+p2(d.getMinutes());
+  const dia = x => { const t = new Date(x); return t.getFullYear()+'-'+p2(t.getMonth()+1)+'-'+p2(t.getDate()); };
+  const tiempos = ALL_ACCESOS.map(x=>Number(x.horaIngreso)).filter(x=>x>0);
+  const desde = tiempos.length ? dia(Math.min.apply(null, tiempos)) : dia(d), hasta = tiempos.length ? dia(Math.max.apply(null, tiempos)) : dia(d);
+  const fecha = desde===hasta ? desde : desde+'_al_'+hasta;
+  const hora = 'exp'+p2(d.getHours())+p2(d.getMinutes())+p2(d.getSeconds());
   let campo = document.getElementById('inCampo').value.trim();
   if(!campo && ALL_ACCESOS.length){
     const cuenta = {}; ALL_ACCESOS.forEach(x=>{ if(x.campo) cuenta[x.campo]=(cuenta[x.campo]||0)+1; });
