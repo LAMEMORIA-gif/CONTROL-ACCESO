@@ -6,8 +6,9 @@
 // v11: N° económico de la unidad para transporte de personal regional.
 // v12: ficha y catálogo de unidades de transporte; pase de unidad permanente con caducidad.
 // v13: formato de Inocuidad RE-PL-164 (PDF y Excel) en el panel.
+// v15: el formato RE-PL-164 ya no incluye la columna FIRMA (PDF y Excel).
 // v14: el archivo exportado lleva campo, días de captura y hora con segundos (ya no se reemplazan en la carpeta).
-const CACHE_NAME = 'control-acceso-cache-v14';
+const CACHE_NAME = 'control-acceso-cache-v15';
 const ASSETS = [
   './',
   './index.html',
