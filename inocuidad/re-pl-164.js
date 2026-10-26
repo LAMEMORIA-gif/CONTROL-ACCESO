@@ -21,10 +21,11 @@
 
   // ---------- geometría del PDF oficial (puntos, origen arriba-izquierda como en el formato) ----------
   var PAG_ALTO = 612;
-  var COLS = [21.1, 77.8, 148.7, 283.4, 418.0, 488.9, 531.5, 630.7, 687.5, 737.0];
+  // Sin la columna FIRMA (no se cuenta con esa información): su ancho se reparte entre NOMBRE, PROCEDENCIA, VISITA A y NO. GAFETE
+  var COLS = [21.1, 77.8, 148.7, 318.4, 483.0, 578.9, 630.7, 687.5, 737.0];
   var FILA_Y0 = 125.8, FILA_Y1 = 565.3, FILA_H = (FILA_Y1 - FILA_Y0) / FILAS_POR_HOJA;
   // alineación por columna: c = centrado, i = izquierda
-  var ALINEA = ['c','c','i','i','i','c','c','c','c'];
+  var ALINEA = ['c','c','i','i','i','c','c','c'];
 
   /* ================= datos ================= */
   function pad(n){ return String(n).padStart(2,'0'); }
@@ -56,7 +57,7 @@
     if(a.numAcompanantes>0) nombre += ' (+'+a.numAcompanantes+' acomp.)';
     var salida = '';
     if(a.horaSalida){ salida = fHora(a.horaSalida); if(!mismoDia(a.horaIngreso, a.horaSalida)) salida += ' ('+pad(new Date(a.horaSalida).getDate())+'/'+pad(new Date(a.horaSalida).getMonth()+1)+')'; }
-    return [fFecha(a.horaIngreso), placas, nombre, limpio(a.empresaProcedencia) || limpio(a.tipoPersona), limpio(a.areaVisita), limpio(a.gafeteNum), '', fHora(a.horaIngreso), salida];
+    return [fFecha(a.horaIngreso), placas, nombre, limpio(a.empresaProcedencia) || limpio(a.tipoPersona), limpio(a.areaVisita), limpio(a.gafeteNum), fHora(a.horaIngreso), salida];
   }
   // "Campo El Milagro Dos" → "CAMPO EL MILAGRO DOS"; "Empaque" → "CAMPO EMPAQUE"
   function nombreFormato(campo){
@@ -132,6 +133,30 @@
       });
     }
 
+    // La plantilla oficial trae impresa la columna FIRMA. Se tapa la zona de columnas NOMBRE…NO. GAFETE
+    // (de x=149.18 a 630.7, entre la línea de PLACAS y la de HORA) y se vuelve a dibujar con 3 divisiones nuevas.
+    var gris_enc = L.rgb(0.906,0.902,0.902), GR = 0.48;
+    var T_TOP = 101.78, T_ENC = 125.78, T_FIN = 565.3 + GR;
+    function rectArr(pag, x, yTop, w, h, color){ pag.drawRectangle({x:x, y:PAG_ALTO-yTop-h, width:w, height:h, color:color, borderWidth:0}); }
+    function textoEnc(pag, t, cx, cy, tam){ var w = ancho(fb,t,tam); pag.drawText(t, {x:cx-w/2, y:PAG_ALTO-cy-tam*0.35, size:tam, font:fb, color:negro}); }
+    function sinFirma(pag){
+      var xi = 148.7+GR, xf = 630.7;                       // zona a rehacer
+      rectArr(pag, xi, T_TOP, xf-xi, T_FIN-T_TOP, blanco);
+      var nuevas = [COLS[3], COLS[4], COLS[5]];            // divisiones verticales nuevas
+      var ini = [xi].concat(nuevas.map(function(v){ return v+GR; })), fin = nuevas.concat([xf]);
+      for(var k=0;k<4;k++) rectArr(pag, ini[k], T_TOP+GR, fin[k]-ini[k], T_ENC-T_TOP-GR, gris_enc);   // fondo gris del encabezado
+      for(var k=0;k<4;k++) rectArr(pag, ini[k], T_TOP, fin[k]-ini[k], GR, negro);                      // línea superior
+      var ys = [T_ENC]; for(var i=1;i<=FILAS_POR_HOJA;i++) ys.push(FILA_Y0 + i*FILA_H);              // líneas horizontales
+      ys.forEach(function(y){ rectArr(pag, xi, y, xf-xi, GR, negro); });
+      nuevas.forEach(function(v){ rectArr(pag, v, T_TOP, GR, T_FIN-T_TOP, negro); });                  // líneas verticales
+      var tam = 9, cy = (T_TOP+T_ENC)/2;
+      var c2 = (COLS[2]+COLS[3])/2, c3 = (COLS[3]+COLS[4])/2, c4 = (COLS[4]+COLS[5])/2, c5 = (COLS[5]+COLS[6])/2;
+      textoEnc(pag, 'NOMBRE DEL PROVEEDOR /', c2, 108.3, tam); textoEnc(pag, 'VISITANTE', c2, 119.8, tam);
+      textoEnc(pag, 'PROCEDENCIA', c3, cy, tam);
+      textoEnc(pag, 'VISITA A', c4, cy, tam);
+      textoEnc(pag, 'NO.', c5, 108.3, tam); textoEnc(pag, 'GAFETE', c5, 119.8, tam);
+    }
+
     for(var g=0; g<grupos.length; g++){
       var gr = grupos[g], filas = gr.registros.map(fila);
       var hojas = Math.max(1, Math.ceil(filas.length/FILAS_POR_HOJA));
@@ -139,6 +164,7 @@
       for(var h=0; h<hojas; h++){
         var copia = await doc.copyPages(plantilla, [0]);
         var pag = doc.addPage(copia[0]);
+        sinFirma(pag);
         // título con el campo correspondiente
         pag.drawRectangle({x:167.7, y:PAG_ALTO-78.4, width:460.3, height:20.4, color:blanco});
         var tt = ajusta(fb, titulo, 436, 12, 7);
@@ -159,7 +185,7 @@
 
   /* ================= Excel (.xlsx) con el mismo encabezado ================= */
   function x(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,''); }
-  var LETRAS = 'ABCDEFGHI';
+  var LETRAS = 'ABCDEFGH';
   function ref(c, r){ return LETRAS[c]+r; }
 
   function hojaXML(gr, mes, idx){
@@ -174,21 +200,21 @@
     function fila_(r, alto, celdas){ rows.push('<row r="'+r+'" ht="'+alto+'" customHeight="1">'+celdas.join('')+'</row>'); }
 
     // 1–3: logo | REGISTRO / título | código
-    fila_(1, 20, [celdaVacia(0,1,9), celdaVacia(1,1,9), celdaTxt(2,1,'REGISTRO',4), celdaVacia(3,1,4), celdaVacia(4,1,4), celdaVacia(5,1,4), celdaVacia(6,1,4),
-      celdaTxt(7,1,'CODIGO: RE-PL-164\nVERSIÓN: 0\nEFECTIVIDAD: 12/11/15',6), celdaVacia(8,1,6)]);
-    fila_(2, 18, [celdaVacia(0,2,9), celdaVacia(1,2,9), celdaTxt(2,2,'CONTROL DE ENTRADAS Y SALIDAS DE VISITANTES '+gr.titulo,5), celdaVacia(3,2,5), celdaVacia(4,2,5), celdaVacia(5,2,5), celdaVacia(6,2,5), celdaVacia(7,2,6), celdaVacia(8,2,6)]);
-    fila_(3, 18, [celdaVacia(0,3,9), celdaVacia(1,3,9), celdaVacia(2,3,5), celdaVacia(3,3,5), celdaVacia(4,3,5), celdaVacia(5,3,5), celdaVacia(6,3,5), celdaVacia(7,3,6), celdaVacia(8,3,6)]);
-    merges.push('A1:B3','C1:G1','C2:G3','H1:I3');
+    fila_(1, 20, [celdaVacia(0,1,9), celdaVacia(1,1,9), celdaTxt(2,1,'REGISTRO',4), celdaVacia(3,1,4), celdaVacia(4,1,4), celdaVacia(5,1,4),
+      celdaTxt(6,1,'CODIGO: RE-PL-164\nVERSIÓN: 0\nEFECTIVIDAD: 12/11/15',6), celdaVacia(7,1,6)]);
+    fila_(2, 18, [celdaVacia(0,2,9), celdaVacia(1,2,9), celdaTxt(2,2,'CONTROL DE ENTRADAS Y SALIDAS DE VISITANTES '+gr.titulo,5), celdaVacia(3,2,5), celdaVacia(4,2,5), celdaVacia(5,2,5), celdaVacia(6,2,6), celdaVacia(7,2,6)]);
+    fila_(3, 18, [celdaVacia(0,3,9), celdaVacia(1,3,9), celdaVacia(2,3,5), celdaVacia(3,3,5), celdaVacia(4,3,5), celdaVacia(5,3,5), celdaVacia(6,3,6), celdaVacia(7,3,6)]);
+    merges.push('A1:B3','C1:F1','C2:F3','G1:H3');
     fila_(4, 13, [celdaRica(0,4,[{t:'Reg. Senasica: ',b:true},{t:'UP2022001759; UP2022001760; UP2022001761.'}],7)]);
-    merges.push('A4:I4');
+    merges.push('A4:H4');
     fila_(5, 25, [celdaRica(0,5,[{t:'Nota: Toda persona externa que ingresa a '},{t:'RANCHO LA MEMORIA S. de R.L. de C.V.',b:true},{t:' Está obligado a cumplir con el Reglamento y Política de Inocuidad, Seguridad y Bioseguridad.'}],8)]);
-    merges.push('A5:I5');
-    var enc = ['FECHA','PLACAS','NOMBRE DEL PROVEEDOR / VISITANTE','PROCEDENCIA','VISITA A','NO. GAFETE','FIRMA','HORA',''];
+    merges.push('A5:H5');
+    var enc = ['FECHA','PLACAS','NOMBRE DEL PROVEEDOR / VISITANTE','PROCEDENCIA','VISITA A','NO. GAFETE','HORA',''];
     fila_(6, 15, enc.map(function(t,c){ return t ? celdaTxt(c,6,t,1) : celdaVacia(c,6,1); }));
-    fila_(7, 15, enc.map(function(t,c){ return c===7 ? celdaTxt(7,7,'ENTRADA',1) : (c===8 ? celdaTxt(8,7,'SALIDA',1) : celdaVacia(c,7,1)); }));
-    merges.push('A6:A7','B6:B7','C6:C7','D6:D7','E6:E7','F6:F7','G6:G7','H6:I6');
+    fila_(7, 15, enc.map(function(t,c){ return c===6 ? celdaTxt(6,7,'ENTRADA',1) : (c===7 ? celdaTxt(7,7,'SALIDA',1) : celdaVacia(c,7,1)); }));
+    merges.push('A6:A7','B6:B7','C6:C7','D6:D7','E6:E7','F6:F7','G6:H6');
     // renglones (mínimo 30, como el formato)
-    var anchos = [10.3, 12.8, 24.3, 24.3, 12.8, 7.9, 17.9, 10.3, 9.2];
+    var anchos = [10.3, 12.8, 31.3, 29.3, 16.8, 9.8, 10.3, 9.2];
     // alto de cada renglón según cuántas líneas ocupa su texto más largo (Arial 9)
     function altoFila(v){
       if(!v) return 18;
@@ -204,7 +230,7 @@
         return v && v[c] ? celdaTxt(c, r, v[c], s) : celdaVacia(c, r, s);
       }));
     }
-    if(!filas.length){ rows[7] = '<row r="8" ht="18" customHeight="1">'+celdaTxt(0,8,'SIN REGISTROS DE VISITANTES EN EL PERIODO',10)+'</row>'; merges.push('A8:I8'); }
+    if(!filas.length){ rows[7] = '<row r="8" ht="18" customHeight="1">'+celdaTxt(0,8,'SIN REGISTROS DE VISITANTES EN EL PERIODO',10)+'</row>'; merges.push('A8:H8'); }
     return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
       '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
@@ -345,7 +371,7 @@
     p.innerHTML =
       '<h2>🧾 Formato para Inocuidad · RE-PL-164</h2>'+
       '<div id="inocAviso"></div>'+
-      '<div class="desc">Control de entradas y salidas de visitantes. Se llena solo con lo que capturan los guardias en caseta (una hoja por campo, 30 renglones por página) para entregarlo cada mes al departamento de Inocuidad. La columna <b>Firma</b> queda en blanco para la firma del visitante.</div>'+
+      '<div class="desc">Control de entradas y salidas de visitantes. Se llena solo con lo que capturan los guardias en caseta (una hoja por campo, 30 renglones por página) para entregarlo cada mes al departamento de Inocuidad.</div>'+
       '<div class="inoc-grid">'+
         '<div class="field"><label for="inocCampo">Campo</label><select id="inocCampo"></select></div>'+
         '<div class="field"><label for="inocMes">Mes</label><input type="month" id="inocMes"></div>'+
