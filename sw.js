@@ -8,7 +8,7 @@
 // v13: formato de Inocuidad RE-PL-164 (PDF y Excel) en el panel.
 // v15: el formato RE-PL-164 ya no incluye la columna FIRMA (PDF y Excel).
 // v14: el archivo exportado lleva campo, días de captura y hora con segundos (ya no se reemplazan en la carpeta).
-const CACHE_NAME = 'control-acceso-cache-v15';
+const CACHE_NAME = 'control-acceso-cache-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -52,20 +52,23 @@ self.addEventListener('activate', function(event){
   self.clients.claim();
 });
 
-self.addEventListener('fetch', function(event){
-  if(event.request.method !== 'GET') return;
-  event.respondWith(
-    fetch(event.request).then(function(response){
-      if(response && response.status===200 && response.type==='basic'){
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then(function(cache){ cache.put(event.request, clone); });
-      }
-      return response;
-    }).catch(function(){
-      return caches.match(event.request).then(function(cached){
-        if(cached) return cached;
-        if(event.request.mode === 'navigate'){ return caches.match('./index.html'); }
-      });
-    })
-  );
+// Apertura rápida aunque la señal sea débil: si la red no responde en 3 segundos se abre la copia guardada
+// (y la red la actualiza por detrás). Antes, con poca señal, la app se quedaba congelada en el ícono.
+const TIEMPO_RED = 3000;
+self.addEventListener('fetch', e => {
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const red = fetch(req, { cache: 'no-store' }).then(r => {
+    if (r && r.ok && r.type === 'basic') { const cp = r.clone(); caches.open(CACHE_NAME).then(c => c.put(req, cp)).catch(() => {}); }
+    return r;
+  });
+  e.waitUntil(red.then(() => {}, () => {}));
+  e.respondWith((async () => {
+    const c = await caches.open(CACHE_NAME);
+    const guardado = (await c.match(req)) || (await c.match(req, { ignoreSearch: true })) ||
+      (req.mode === 'navigate' ? ((await c.match('./index.html')) || (await c.match('./'))) : undefined);
+    if (!guardado) return red.catch(() => Response.error());
+    const r = await Promise.race([red.catch(() => null), new Promise(res => setTimeout(() => res(null), TIEMPO_RED))]);
+    return (r && r.ok) ? r : guardado;
+  })());
 });
