@@ -461,6 +461,7 @@ footer.note b{color:var(--muted);}
 .qr-problemas.grave{color:var(--rojo);}
 .qr-oculto{display:none !important;}
 </style>
+<script src="campos-lm.js"></script>
 <script src="qr-acceso.js"></script>
 <script src="jsQR.js" defer></script>
 </head>
@@ -490,8 +491,7 @@ footer.note b{color:var(--muted);}
     </div>
     <div class="field-inline" style="margin-bottom:0;">
       <label class="req">Área / Campo</label>
-      <input type="text" id="inCampo" list="dlCampo" placeholder="Ej. Campo Palomas">
-      <datalist id="dlCampo"></datalist>
+      <select id="inCampo"><option value="">— Seleccionar campo —</option></select>
     </div>
   </div>
 
@@ -990,7 +990,9 @@ document.getElementById('historialList').addEventListener('click', async functio
 });
 
 // ---------- campo datalist ----------
-function refreshCampoDatalist(){
+(function(){ const s=document.getElementById('inCampo'); CAMPOS_LM.nombres.forEach(n=>{ const o=document.createElement('option'); o.textContent=n; o.value=n; s.appendChild(o); }); })();
+function refreshCampoDatalist(){ return; // el campo ahora es una lista desplegable con el catálogo oficial
+
   const campos = Array.from(new Set(ALL_ACCESOS.map(a=>a.campo))).sort();
   document.getElementById('dlCampo').innerHTML = campos.map(c=>`<option value="${c}">`).join('');
 }

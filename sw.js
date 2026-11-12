@@ -8,8 +8,9 @@
 // v13: formato de Inocuidad RE-PL-164 (PDF y Excel) en el panel.
 // v15: el formato RE-PL-164 ya no incluye la columna FIRMA (PDF y Excel).
 // v14: el archivo exportado lleva campo, días de captura y hora con segundos (ya no se reemplazan en la carpeta).
-const CACHE_NAME = 'control-acceso-cache-v16';
+const CACHE_NAME = 'control-acceso-cache-v17';
 const ASSETS = [
+  './campos-lm.js',
   './',
   './index.html',
   './panel.html',

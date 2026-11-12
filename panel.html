@@ -425,6 +425,7 @@ tr.acceso-row:hover td{background:var(--panel-alt);}
 @media (max-width:760px){ .add-form{grid-template-columns:1fr 1fr;} .add-form .f-half{grid-column:1 / -1;} }
 </style>
 <script src="qrcode.js"></script>
+<script src="campos-lm.js"></script>
 <script src="qr-acceso.js"></script>
 </head>
 <body>
@@ -507,8 +508,7 @@ tr.acceso-row:hover td{background:var(--panel-alt);}
         </div>
         <div>
           <label>Campo / caseta</label>
-          <input type="text" id="qrCampo" list="dlCamposQR" placeholder="Cualquier campo">
-          <datalist id="dlCamposQR"></datalist>
+          <select id="qrCampo"><option value="">Cualquier campo</option></select>
         </div>
         <div>
           <label class="req">Motivo</label>
@@ -1297,8 +1297,8 @@ function renderAll(){
 // "empaque" o "Campo Empaque". Aquí se agrupan todas esas variantes bajo un solo nombre (el más usado)
 // para que el filtro, las gráficas y el reporte las cuenten juntas. No modifica los datos guardados.
 function claveCampo(txt){
-  return String(txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase().replace(/\s+/g,' ').trim().replace(/^campo\s+/,'') || '(sin campo)';
+  const o = CAMPOS_LM.oficial(txt); // catálogo oficial: todas las variantes dan el mismo campo
+  return o ? CAMPOS_LM.norm(o) : (String(txt||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim().replace(/^campo\s+/,'') || '(sin campo)');
 }
 function unificarCampos(lista){
   const conteo = {}; // clave -> {variante: veces}
@@ -1310,7 +1310,8 @@ function unificarCampos(lista){
   });
   const nombre = {};
   Object.keys(conteo).forEach(k=>{
-    nombre[k] = Object.entries(conteo[k]).sort((x,y)=>y[1]-x[1] || x[0].localeCompare(y[0]))[0][0];
+    const of = CAMPOS_LM.nombres.find(n=>CAMPOS_LM.norm(n)===k);
+    nombre[k] = of || Object.entries(conteo[k]).sort((x,y)=>y[1]-x[1] || x[0].localeCompare(y[0]))[0][0];
   });
   lista.forEach(a=>{
     if(a.campoOriginal===undefined) a.campoOriginal = a.campo;
@@ -1677,7 +1678,7 @@ document.getElementById('qrUnidades').addEventListener('click', function(e){
   document.getElementById('qrEconomico').value = bp.dataset.ne; qrBuscarUnidad();
   const u = qrLoadUnidades()[bp.dataset.ne] || {};
   if(u.area) document.getElementById('qrArea').value = u.area;
-  if(u.campo) document.getElementById('qrCampo').value = u.campo;
+  if(u.campo) document.getElementById('qrCampo').value = CAMPOS_LM.oficial(u.campo) || '';
   if(u.anfitrion) document.getElementById('qrAnfitrion').value = u.anfitrion;
   qrMsg('qrCrearMsg', 'Unidad '+bp.dataset.ne+' cargada del catálogo. Revise el chofer y la vigencia, y toque "Crear pase de unidad".', true);
   document.getElementById('qrTipo').scrollIntoView({behavior:'smooth', block:'center'});
@@ -1850,7 +1851,7 @@ document.getElementById('qrRecurrentes').addEventListener('click', function(e){
   document.getElementById('qrTipo').value = 'F'; qrAplicarTipo();
   const set = (id,val)=>{ if(val) document.getElementById(id).value = val; };
   set('qrNombre', r.nombre); set('qrEmpresa', r.empresa); set('qrPlacas', r.placas); set('qrTipoID', r.tipoID);
-  set('qrTipoPersona', r.tipoPersona); set('qrArea', r.area); set('qrCampo', r.campo);
+  set('qrTipoPersona', r.tipoPersona); set('qrArea', r.area); set('qrCampo', CAMPOS_LM.oficial(r.campo) || r.campo);
   if(r.motivo && Array.from(document.getElementById('qrMotivo').options).some(o=>o.value===r.motivo)) document.getElementById('qrMotivo').value = r.motivo;
   qrAplicarMotivo(); set('qrEconomico', r.ne); if(r.ne) qrBuscarUnidad();
   document.querySelectorAll('#qrDias input').forEach(cb=>{ cb.checked = r.diasSemana.indexOf(cb.value)!==-1; });
@@ -1901,7 +1902,7 @@ document.getElementById('qrEmitidos').addEventListener('click', function(e){
 });
 
 function qrRefrescarCampos(){
-  document.getElementById('dlCamposQR').innerHTML = Array.from(new Set(ALL_ACCESOS.map(a=>a.campo).filter(Boolean))).sort().map(c=>`<option value="${QA.esc(c)}">`).join('');
+  (function(){ const s=document.getElementById('qrCampo'); if(s && s.options.length<2) CAMPOS_LM.nombres.forEach(n=>{ const o=document.createElement('option'); o.textContent=n; o.value=n; s.appendChild(o); }); })();
 }
 function qrRenderTodo(){ qrRefrescarCampos(); qrSembrarUnidadesDeRegistros(); qrRenderUnidades(); qrRenderRecurrentes(); qrRenderEmitidos(); }
 qrAplicarTipo(); qrAplicarMotivo();

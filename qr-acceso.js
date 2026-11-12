@@ -83,7 +83,7 @@
   function codigoClave(clave){ return PREFIJO_CLAVE+'.'+clave; }
 
   // Normaliza nombres de campo para comparar ("Campo Palomas" = "campo palomas" = "CAMPO PALOMAS ")
-  function normaliza(t){ return String(t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toLowerCase(); }
+  function normaliza(t){ const o = (typeof CAMPOS_LM!=='undefined') ? CAMPOS_LM.oficial(t) : ''; return String(o||t||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' ').trim().toLowerCase(); }
 
   // Fecha local "YYYY-MM-DD" y minutos desde medianoche
   function hoyISO(d){ d = d||new Date(); const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
