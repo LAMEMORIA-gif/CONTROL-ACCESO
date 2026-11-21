@@ -9,7 +9,7 @@
 // v15: el formato RE-PL-164 ya no incluye la columna FIRMA (PDF y Excel).
 // v18: protección contra pérdida de registros (respaldo-seguro.js): memoria persistente, barra de respaldo y aviso de borrado.
 // v14: el archivo exportado lleva campo, días de captura y hora con segundos (ya no se reemplazan en la carpeta).
-const CACHE_NAME = 'control-acceso-cache-v18';
+const CACHE_NAME = 'control-acceso-cache-v19';
 const ASSETS = [
   './campos-lm.js',
   './respaldo-seguro.js',
